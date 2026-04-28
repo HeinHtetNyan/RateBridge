@@ -1,6 +1,9 @@
 import { I18N } from './i18n.js';
 
-const API_BASE      = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/$/, '');
+// In dev Vite proxies /api → backend (no CORS). In prod use the full URL from env.
+const API_BASE = import.meta.env.DEV
+  ? ''
+  : (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
 const GITHUB_URL    = import.meta.env.VITE_GITHUB_URL   || '#';
 const LINKEDIN_URL  = import.meta.env.VITE_LINKEDIN_URL || '#';
 
@@ -9,9 +12,8 @@ const state = {
   rates: null,
   from: 'MMK',
   to: 'THB',
-  amount: '100000',
+  amount: '',
   userRate: '',
-  useOfficial: false,
   backendOnline: false,
   currentLang: localStorage.getItem('ratebridge-lang') || 'EN',
   history: { usd_thb: [], usd_mmk: [], thb_mmk: [] },
@@ -39,9 +41,6 @@ const el = {
   amount:       $('amount'),
   amountCcy:    $('amount-currency'),
   swapBtn:      $('swap-btn'),
-  officialToggle: $('official-toggle'),
-  toggleLabel:  $('toggle-label'),
-  toggleDot:    $('toggle-dot'),
   quickAmounts: $('quick-amounts'),
   resultMain:      $('result-main'),
   resultCcy:       $('result-ccy'),
@@ -129,6 +128,7 @@ if (el.linkedinLink) el.linkedinLink.href = LINKEDIN_URL;
 applyLanguage(state.currentLang);
 setupPickerListeners();
 setupListeners();
+updateUserRateVisibility();   // show rate input immediately, before rates load
 startClock();
 fetchRates();
 state.ratesInterval = setInterval(fetchRates, 60_000);
@@ -232,11 +232,6 @@ async function fetchRates() {
       state.history.usd_thb = seedHistory(data.usd_to_thb, 56, 0.003);
       state.history.usd_mmk = seedHistory(data.usd_to_mmk, 56, 0.006);
       state.history.thb_mmk = seedHistory(data.thb_to_mmk, 56, 0.005);
-      // pre-fill user rate from market data on first load
-      if (!state.userRate && data.thb_to_mmk > 0) {
-        state.userRate = String(Math.round(100000 / data.thb_to_mmk));
-        if (el.userRateInput) el.userRateInput.value = state.userRate;
-      }
     } else {
       state.history.usd_thb = [...state.history.usd_thb.slice(1), data.usd_to_thb];
       state.history.usd_mmk = [...state.history.usd_mmk.slice(1), data.usd_to_mmk];
@@ -396,22 +391,18 @@ function calculate() {
   const rates = state.rates;
   const usdToThb = rates.usd_to_thb;
 
-  // Resolve MMK per THB
+  // Resolve MMK per THB from user's input rate
   let mmkPerThb;
   if (involvesMMK) {
-    if (state.useOfficial) {
-      mmkPerThb = rates.thb_to_mmk;
-    } else {
-      const ur = parseFloat(state.userRate);
-      if (!ur || ur <= 0) {
-        clearResult();
-        el.resultError.textContent = t('resultEnterRate');
-        el.resultError.classList.remove('is-hidden');
-        updateHints();
-        return;
-      }
-      mmkPerThb = 100000 / ur;
+    const ur = parseFloat(state.userRate);
+    if (!ur || ur <= 0) {
+      clearResult();
+      el.resultError.textContent = t('resultEnterRate');
+      el.resultError.classList.remove('is-hidden');
+      updateHints();
+      return;
     }
+    mmkPerThb = 100000 / ur;
   }
 
   const rate   = getRateFromTo(from, to, usdToThb, mmkPerThb);
@@ -453,32 +444,17 @@ function calculate() {
 }
 
 function updateUserRateVisibility() {
-  const involvesMMK = state.from === 'MMK' || state.to === 'MMK';
   if (!el.userRateSection) return;
-  if (involvesMMK) {
-    el.userRateSection.classList.remove('is-hidden');
-    if (el.userRateInput) el.userRateInput.disabled = state.useOfficial;
-    updateDerivedRate();
-  } else {
-    el.userRateSection.classList.add('is-hidden');
-  }
+  const involvesMMK = state.from === 'MMK' || state.to === 'MMK';
+  el.userRateSection.classList.toggle('is-hidden', !involvesMMK);
+  if (involvesMMK) updateDerivedRate();
 }
 
 function updateDerivedRate() {
   if (!el.derivedRate) return;
-  const involvesMMK = state.from === 'MMK' || state.to === 'MMK';
-  if (!involvesMMK) return;
-
-  let mmkPerThb;
-  if (state.useOfficial && state.rates) {
-    mmkPerThb = state.rates.thb_to_mmk;
-  } else {
-    const ur = parseFloat(state.userRate);
-    if (ur > 0) mmkPerThb = 100000 / ur;
-  }
-
-  el.derivedRate.textContent = mmkPerThb
-    ? `1 THB ≈ ${fmtNum(mmkPerThb, 2)} MMK`
+  const ur = parseFloat(state.userRate);
+  el.derivedRate.textContent = ur > 0
+    ? `1 THB ≈ ${fmtNum(100000 / ur, 2)} MMK`
     : '1 THB ≈ — MMK';
 }
 
@@ -486,8 +462,7 @@ function updateHints() {
   const involvesMMK = state.from === 'MMK' || state.to === 'MMK';
   const isOfficial  = state.rates?.mmk_source === 'cbm_official';
 
-  // P2P hint
-  if (involvesMMK && !state.useOfficial && !isOfficial && state.rates) {
+  if (involvesMMK && !isOfficial && state.rates) {
     const thb100k = fmtNum(100000 / state.rates.thb_to_mmk, 2);
     el.p2pText.textContent = `${t('p2pHint')} · 100k MMK ≈ ${thb100k} THB`;
     el.p2pHint.classList.remove('is-hidden');
@@ -495,12 +470,7 @@ function updateHints() {
     el.p2pHint.classList.add('is-hidden');
   }
 
-  // CBM warning
-  if (isOfficial || (involvesMMK && state.useOfficial)) {
-    el.cbmWarning.classList.remove('is-hidden');
-  } else {
-    el.cbmWarning.classList.add('is-hidden');
-  }
+  el.cbmWarning.classList.toggle('is-hidden', !isOfficial);
 }
 
 // ─── Currency pickers ─────────────────────────────────────────────────
@@ -678,16 +648,6 @@ function setupListeners() {
     }, 280);
   });
 
-  // official toggle
-  el.officialToggle.addEventListener('click', () => {
-    state.useOfficial = !state.useOfficial;
-    el.officialToggle.setAttribute('aria-checked', String(state.useOfficial));
-    el.officialToggle.classList.toggle('is-official', state.useOfficial);
-    el.toggleLabel.textContent = state.useOfficial ? t('modeCbm') : t('modeMarket');
-    updateUserRateVisibility();
-    calculate();
-  });
-
   // copy
   el.copyBtn.addEventListener('click', copyResult);
 
@@ -731,10 +691,7 @@ function setLanguage(code) {
   state.currentLang = code;
   localStorage.setItem('ratebridge-lang', code);
   applyLanguage(code);
-  // re-sync dynamic text
   setBackendStatus(state.backendOnline);
-  el.officialToggle.classList.toggle('is-official', state.useOfficial);
-  el.toggleLabel.textContent = state.useOfficial ? t('modeCbm') : t('modeMarket');
   renderQuickAmounts();
   calculate();
 }

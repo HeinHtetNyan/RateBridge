@@ -3,8 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>RateBridge — Trader Desk</title>
+  <title>RateBridge — Currency Exchanger</title>
   <meta name="description" content="Live THB · MMK · USD exchange desk with real-time Binance P2P and CBM reference rates.">
+  <link rel="icon" type="image/png" href="/logo.png">
+  <link rel="apple-touch-icon" href="/logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Geist:wght@400;500;600;700&family=Noto+Sans+Myanmar:wght@400;500;600&display=swap" rel="stylesheet">
@@ -21,7 +23,7 @@
     <!-- ── Top bar ──────────────────────────────────────────────────── -->
     <header class="topbar">
       <div class="topbar-logo">
-        <div class="logo-mark">RB</div>
+        <img src="/logo.png" alt="RateBridge logo" class="logo-mark-img">
         <div class="logo-copy">
           <strong>RateBridge</strong>
           <span class="logo-version">Currency Exchanger</span>
@@ -112,10 +114,6 @@
 
           <div class="card-header">
             <span class="card-title">// Converter</span>
-            <button id="official-toggle" class="mode-toggle" type="button" role="switch" aria-checked="false">
-              <span id="toggle-dot" class="toggle-dot"></span>
-              <span id="toggle-label" data-i18n="modeMarket">Market Rate</span>
-            </button>
           </div>
 
           <!-- From -->
@@ -138,7 +136,7 @@
               class="amount-input"
               type="text"
               inputmode="decimal"
-              value="100000"
+              value=""
               placeholder="0"
               aria-label="Amount"
             >
