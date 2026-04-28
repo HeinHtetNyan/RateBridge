@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RateBridge — Trader Desk</title>
+  <meta name="description" content="Live THB · MMK · USD exchange desk with real-time Binance P2P and CBM reference rates.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Geist:wght@400;500;600;700&family=Noto+Sans+Myanmar:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./assets/styles/tokens.css">
+  <link rel="stylesheet" href="./assets/styles/app.css">
+  <script type="module" src="./assets/scripts/app.js"></script>
+</head>
+<body>
+  <div class="grid-bg" aria-hidden="true"></div>
+  <div class="ambient-glow" aria-hidden="true"></div>
+
+  <div class="page-shell">
+
+    <!-- ── Top bar ──────────────────────────────────────────────────── -->
+    <header class="topbar">
+      <div class="topbar-logo">
+        <div class="logo-mark">RB</div>
+        <div class="logo-copy">
+          <strong>RateBridge</strong>
+          <span class="logo-version">Currency Exchanger</span>
+        </div>
+      </div>
+
+      <div class="topbar-center">
+        <div class="clock-item">
+          <span class="clock-city">YGN</span>
+          <span id="clock-mm" class="clock-time">--:--:--</span>
+        </div>
+        <div class="clock-item">
+          <span class="clock-city">BKK</span>
+          <span id="clock-bkk" class="clock-time">--:--:--</span>
+        </div>
+        <div class="clock-item">
+          <span class="clock-city">UTC</span>
+          <span id="clock-utc" class="clock-time">--:--:--</span>
+        </div>
+      </div>
+
+      <div class="topbar-tools">
+        <div id="status-pill" class="status-pill" aria-live="polite">
+          <span id="status-dot" class="status-dot"></span>
+          <span id="status-label">Connecting…</span>
+        </div>
+
+        <!-- Theme toggle -->
+        <button id="theme-toggle" class="theme-btn" type="button" aria-label="Switch to light mode" title="Toggle theme">
+          <svg id="theme-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+
+        <div class="lang-switcher" aria-label="Language">
+          <button type="button" class="lang-btn is-active" data-lang="EN">EN</button>
+          <button type="button" class="lang-btn" data-lang="MM">MM</button>
+        </div>
+
+        <button id="mobile-menu-btn" class="icon-btn mobile-only" type="button" aria-expanded="false" aria-controls="mobile-menu">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- ── Ticker rail ───────────────────────────────────────────────── -->
+    <div class="ticker-rail" role="region" aria-label="Live rates">
+      <div class="ticker-item">
+        <div>
+          <div class="ticker-pair">USD/THB</div>
+          <div id="tick-val-usd-thb" class="ticker-value">—</div>
+          <div id="tick-chg-usd-thb" class="ticker-change">—</div>
+        </div>
+        <svg id="spark-tick-usd-thb" class="sparkline" width="130" height="40" viewBox="0 0 130 40" aria-hidden="true"></svg>
+      </div>
+      <div class="ticker-item">
+        <div>
+          <div class="ticker-pair">USD/MMK</div>
+          <div id="tick-val-usd-mmk" class="ticker-value">—</div>
+          <div id="tick-chg-usd-mmk" class="ticker-change">—</div>
+        </div>
+        <svg id="spark-tick-usd-mmk" class="sparkline" width="130" height="40" viewBox="0 0 130 40" aria-hidden="true"></svg>
+      </div>
+      <div class="ticker-item">
+        <div>
+          <div class="ticker-pair">THB/MMK</div>
+          <div id="tick-val-thb-mmk" class="ticker-value">—</div>
+          <div id="tick-chg-thb-mmk" class="ticker-change">—</div>
+        </div>
+        <svg id="spark-tick-thb-mmk" class="sparkline" width="130" height="40" viewBox="0 0 130 40" aria-hidden="true"></svg>
+      </div>
+    </div>
+
+    <!-- ── Main grid ─────────────────────────────────────────────────── -->
+    <main class="main-grid">
+
+      <!-- Left column: converter + manual -->
+      <div class="left-col">
+
+        <!-- Converter card -->
+        <section class="card converter-card" id="converter" aria-label="Converter">
+          <span class="ct tl" aria-hidden="true"></span>
+          <span class="ct tr" aria-hidden="true"></span>
+          <span class="ct bl" aria-hidden="true"></span>
+          <span class="ct br" aria-hidden="true"></span>
+
+          <div class="card-header">
+            <span class="card-title">// Converter</span>
+            <button id="official-toggle" class="mode-toggle" type="button" role="switch" aria-checked="false">
+              <span id="toggle-dot" class="toggle-dot"></span>
+              <span id="toggle-label" data-i18n="modeMarket">Market Rate</span>
+            </button>
+          </div>
+
+          <!-- From -->
+          <div class="field-row">
+            <div class="field-meta">
+              <span class="field-label" data-i18n="fromLabel">From</span>
+              <span class="field-hint" data-i18n="hintPay">Pay</span>
+            </div>
+            <div class="ccy-picker" id="from-picker" role="group" aria-label="Source currency">
+              <button type="button" class="ccy-btn is-active" data-from="MMK">MMK</button>
+              <button type="button" class="ccy-btn" data-from="THB">THB</button>
+              <button type="button" class="ccy-btn" data-from="USD">USD</button>
+            </div>
+          </div>
+
+          <!-- Amount -->
+          <div class="amount-wrap">
+            <input
+              id="amount"
+              class="amount-input"
+              type="text"
+              inputmode="decimal"
+              value="100000"
+              placeholder="0"
+              aria-label="Amount"
+            >
+            <span id="amount-currency" class="amount-suffix">MMK</span>
+          </div>
+
+          <!-- Quick amounts -->
+          <div id="quick-amounts" class="quick-amounts" aria-label="Quick amounts"></div>
+
+          <!-- Swap -->
+          <div class="swap-row">
+            <div class="swap-line"></div>
+            <button id="swap-btn" class="swap-btn" type="button" aria-label="Swap currencies">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M3 5h10M11 3l2 2-2 2M13 11H3M5 9l-2 2 2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            <div class="swap-line"></div>
+          </div>
+
+          <!-- To -->
+          <div class="field-row">
+            <div class="field-meta">
+              <span class="field-label" data-i18n="toLabel">To</span>
+              <span class="field-hint" data-i18n="hintReceive">Receive</span>
+            </div>
+            <div class="ccy-picker" id="to-picker" role="group" aria-label="Target currency">
+              <button type="button" class="ccy-btn" data-to="MMK">MMK</button>
+              <button type="button" class="ccy-btn is-active" data-to="THB">THB</button>
+              <button type="button" class="ccy-btn" data-to="USD">USD</button>
+            </div>
+          </div>
+
+          <!-- User rate input (visible when MMK involved & market mode) -->
+          <div id="user-rate-section" class="user-rate-section is-hidden">
+            <div class="user-rate-header">
+              <div>
+                <span class="field-label" data-i18n="yourRateLabel">Your Rate</span>
+                <span class="user-rate-unit">THB / 100k MMK</span>
+              </div>
+              <span id="derived-rate" class="derived-rate">1 THB ≈ — MMK</span>
+            </div>
+            <div class="user-rate-wrap">
+              <input
+                id="user-rate"
+                class="user-rate-input"
+                type="text"
+                inputmode="decimal"
+                placeholder="e.g. 780"
+                aria-label="Rate in THB per 100,000 MMK"
+              >
+              <span class="user-rate-suffix">THB / 100k</span>
+            </div>
+          </div>
+
+          <!-- Result -->
+          <div class="result-block" aria-live="polite">
+            <div class="result-main">
+              <span id="result-main" class="result-number">—</span>
+              <span id="result-ccy" class="result-ccy">THB</span>
+            </div>
+            <div id="result-secondary" class="result-secondary is-hidden">
+              <span class="result-sec-prefix">≈</span>
+              <span id="result-sec-value" class="result-sec-value">—</span>
+              <span id="result-sec-ccy" class="result-sec-ccy">USD</span>
+            </div>
+            <p id="result-error" class="result-error-msg is-hidden"></p>
+          </div>
+
+          <!-- Rate footnote -->
+          <div class="rate-footnote">
+            <div>
+              <span class="rate-applied-label" data-i18n="rateApplied">Rate applied</span>
+              <span id="rate-applied-text" class="rate-applied-value">—</span>
+            </div>
+            <button id="secure-btn" class="copy-btn" type="button" disabled>
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <rect x="4" y="4" width="9" height="9" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M11 4V2.5A.5.5 0 0010.5 2h-7a.5.5 0 00-.5.5v7a.5.5 0 00.5.5H4" stroke="currentColor" stroke-width="1.5"/>
+              </svg>
+              <span id="copy-label" data-i18n="copyResult">Copy quote</span>
+            </button>
+          </div>
+
+          <!-- P2P hint -->
+          <div id="p2p-hint" class="p2p-hint is-hidden">
+            <span class="p2p-badge">P2P MEDIAN</span>
+            <span id="p2p-text" class="p2p-text">Sampled from live Binance P2P listings</span>
+          </div>
+
+          <!-- CBM warning -->
+          <div id="cbm-warning" class="cbm-warning is-hidden">
+            <span class="cbm-warning-icon" aria-hidden="true">⚠</span>
+            <span data-i18n="cbmWarning">Showing official CBM rates. Market rates may differ.</span>
+          </div>
+        </section>
+
+        <!-- Manual strip -->
+        <section class="manual-strip" aria-label="How it works">
+          <div class="manual-header">
+            <span class="card-title">// Manual</span>
+            <span class="manual-meta" data-i18n="manualMeta">4 STEPS · 10 SEC</span>
+          </div>
+          <div class="steps-grid">
+            <div class="step-item">
+              <span class="step-num">01</span>
+              <strong data-i18n="step1Title">Pick pair</strong>
+              <span data-i18n="step1Body">Choose source and target — MMK, THB, USD.</span>
+            </div>
+            <div class="step-item">
+              <span class="step-num">02</span>
+              <strong data-i18n="step2Title">Set rate</strong>
+              <span data-i18n="step2Body">Use live market median or CBM official.</span>
+            </div>
+            <div class="step-item">
+              <span class="step-num">03</span>
+              <strong data-i18n="step3Title">Enter amount</strong>
+              <span data-i18n="step3Body">Quote updates in realtime as you type.</span>
+            </div>
+            <div class="step-item">
+              <span class="step-num">04</span>
+              <strong data-i18n="step4Title">Copy quote</strong>
+              <span data-i18n="step4Body">Share-ready text with the exact rate applied.</span>
+            </div>
+          </div>
+        </section>
+
+      </div><!-- /left-col -->
+
+      <!-- Right column: ref rates + quote log -->
+      <div class="right-col">
+
+        <!-- Reference rates -->
+        <section class="card ref-rates-card" id="rates" aria-label="Reference rates">
+          <div class="card-header">
+            <span class="card-title" data-i18n="refRatesTitle">Reference rates</span>
+            <div class="rates-meta">
+              <div id="rates-loading-indicator" class="loading-dot is-hidden" aria-hidden="true"></div>
+              <span id="rates-updated" class="rates-updated">—</span>
+            </div>
+          </div>
+
+          <div class="ref-rate-row">
+            <div class="ref-rate-info">
+              <span class="ref-rate-pair">USD / THB</span>
+              <span class="ref-rate-source">Frankfurter</span>
+            </div>
+            <div class="ref-rate-value-col">
+              <span id="ref-val-usd-thb" class="ref-rate-value">—</span>
+              <span id="ref-chg-usd-thb" class="ref-rate-chg">—</span>
+            </div>
+            <svg id="spark-ref-usd-thb" class="sparkline-sm" width="90" height="30" viewBox="0 0 90 30" aria-hidden="true"></svg>
+            <span id="ref-badge-usd-thb" class="ref-badge">—</span>
+          </div>
+
+          <div class="ref-rate-row">
+            <div class="ref-rate-info">
+              <span class="ref-rate-pair">USD / MMK</span>
+              <span id="ref-src-usd-mmk" class="ref-rate-source">Binance P2P</span>
+            </div>
+            <div class="ref-rate-value-col">
+              <span id="ref-val-usd-mmk" class="ref-rate-value">—</span>
+              <span id="ref-chg-usd-mmk" class="ref-rate-chg">—</span>
+            </div>
+            <svg id="spark-ref-usd-mmk" class="sparkline-sm" width="90" height="30" viewBox="0 0 90 30" aria-hidden="true"></svg>
+            <span id="ref-badge-usd-mmk" class="ref-badge">—</span>
+          </div>
+
+          <div class="ref-rate-row">
+            <div class="ref-rate-info">
+              <span class="ref-rate-pair">THB / MMK</span>
+              <span id="ref-src-thb-mmk" class="ref-rate-source">Derived</span>
+            </div>
+            <div class="ref-rate-value-col">
+              <span id="ref-val-thb-mmk" class="ref-rate-value">—</span>
+              <span id="ref-chg-thb-mmk" class="ref-rate-chg">—</span>
+            </div>
+            <svg id="spark-ref-thb-mmk" class="sparkline-sm" width="90" height="30" viewBox="0 0 90 30" aria-hidden="true"></svg>
+            <span id="ref-badge-thb-mmk" class="ref-badge">—</span>
+          </div>
+        </section>
+
+        <!-- Quote log -->
+        <section class="card quote-log-card" aria-label="Quote history">
+          <div class="card-header">
+            <span class="card-title" data-i18n="quoteLogTitle">Quote log</span>
+            <span class="quote-log-meta" data-i18n="quoteLogMeta">This session</span>
+          </div>
+          <div id="quote-log" class="quote-log">
+            <div id="quote-log-empty" class="quote-log-empty" data-i18n="quoteLogEmpty">No quotes yet</div>
+          </div>
+        </section>
+
+      </div><!-- /right-col -->
+    </main>
+
+    <!-- ── Footer ────────────────────────────────────────────────────── -->
+    <footer class="footer-strip">
+      <span class="footer-sync">Last sync: <span id="last-sync" class="last-sync">—</span></span>
+      <span class="footer-mid" data-i18n="footerSources">Refresh: 60s · Sources: Frankfurter, Binance P2P, CBM</span>
+      <span class="footer-brand">
+        <a id="github-link" class="social-link" href="#" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/>
+          </svg>
+        </a>
+        <a id="linkedin-link" class="social-link" href="#" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+          </svg>
+        </a>
+        <span class="footer-copy">RateBridge · 2026</span>
+      </span>
+    </footer>
+
+  </div><!-- /page-shell -->
+
+  <!-- ── Mobile menu ───────────────────────────────────────────────── -->
+  <div id="mobile-menu" class="mobile-menu is-hidden" aria-hidden="true" role="dialog" aria-label="Menu">
+    <div class="mobile-menu-panel">
+      <div class="mobile-menu-header">
+        <strong data-i18n="mobileMenuTitle">Menu</strong>
+        <button id="mobile-menu-close" class="icon-btn" type="button" aria-label="Close menu">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+      <div class="status-pill" id="mobile-status-pill">
+        <span id="mobile-status-dot" class="status-dot"></span>
+        <span id="mobile-status-label">Connecting…</span>
+      </div>
+      <div class="mobile-langs">
+        <button type="button" class="lang-btn is-active" data-lang="EN">EN</button>
+        <button type="button" class="lang-btn" data-lang="MM">MM</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Toast ─────────────────────────────────────────────────────── -->
+  <div id="toast" class="toast is-hidden" aria-live="polite" role="status">
+    <div class="toast-card">
+      <svg id="toast-icon" class="toast-icon" width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span id="toast-msg"></span>
+    </div>
+  </div>
+
+</body>
+</html>

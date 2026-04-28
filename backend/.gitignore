@@ -1,0 +1,34 @@
+# ── Python bytecode ──────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+
+# ── Distribution / packaging ─────────────────────────────────────────────
+*.egg-info/
+*.egg
+dist/
+build/
+
+# ── Virtual environments ──────────────────────────────────────────────────
+venv/
+env/
+.venv/
+.env/
+
+# ── Environment — NEVER commit secrets ───────────────────────────────────
+.env
+.env.local
+
+# ── Testing & coverage ───────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# ── IDE ──────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+
+# ── OS ───────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db

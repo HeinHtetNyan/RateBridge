@@ -1,0 +1,57 @@
+/* ── Dark mode (default) ─────────────────────────────────────────────── */
+:root {
+  --accent:      #5ce1a8;
+  --accent-dim:  rgba(92, 225, 168, 0.12);
+  --accent-glow: rgba(92, 225, 168, 0.35);
+  --accent-line: rgba(92, 225, 168, 0.28);
+  --bg:          #050505;
+  --surface:     rgba(255, 255, 255, 0.025);
+  --surface-2:   rgba(255, 255, 255, 0.05);
+  --border:      rgba(255, 255, 255, 0.07);
+  --border-2:    rgba(255, 255, 255, 0.15);
+  --text:        #ffffff;
+  --text-sec:    rgba(255, 255, 255, 0.52);
+  --text-dim:    rgba(255, 255, 255, 0.32);
+  --positive:    #5ce1a8;
+  --negative:    #ff6b8a;
+  --amber:       #ffb86b;
+  --cyan:        #7ad7ff;
+  --logo-bg:     #050505;
+  --copy-bg:     #ffffff;
+  --copy-text:   #000000;
+  --ctrl-active: #ffffff;
+  --ctrl-text:   #000000;
+  --card-shadow: none;
+  --topbar-bg:   rgba(0, 0, 0, 0.5);
+  --grid-color:  rgba(255, 255, 255, 0.025);
+  --mono: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace;
+  --sans: 'Geist', 'Inter', -apple-system, system-ui, sans-serif;
+}
+
+/* ── Light mode ──────────────────────────────────────────────────────── */
+html[data-theme="light"] {
+  --accent:      #00936a;
+  --accent-dim:  rgba(0, 147, 106, 0.1);
+  --accent-glow: rgba(0, 147, 106, 0.22);
+  --accent-line: rgba(0, 147, 106, 0.3);
+  --bg:          #f0f2f6;
+  --surface:     rgba(255, 255, 255, 0.92);
+  --surface-2:   rgba(255, 255, 255, 1);
+  --border:      rgba(0, 0, 0, 0.07);
+  --border-2:    rgba(0, 0, 0, 0.16);
+  --text:        #0d1626;
+  --text-sec:    rgba(13, 22, 38, 0.58);
+  --text-dim:    rgba(13, 22, 38, 0.38);
+  --positive:    #00936a;
+  --negative:    #d43b5e;
+  --amber:       #b06000;
+  --cyan:        #0874a4;
+  --logo-bg:     #f0f2f6;
+  --copy-bg:     #0d1626;
+  --copy-text:   #ffffff;
+  --ctrl-active: #0d1626;
+  --ctrl-text:   #ffffff;
+  --card-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.05);
+  --topbar-bg:   rgba(240, 242, 246, 0.88);
+  --grid-color:  rgba(0, 0, 0, 0.035);
+}
