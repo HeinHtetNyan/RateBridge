@@ -7,7 +7,7 @@ const API_BASE = import.meta.env.DEV
 const GITHUB_URL    = import.meta.env.VITE_GITHUB_URL   || '#';
 const LINKEDIN_URL  = import.meta.env.VITE_LINKEDIN_URL || '#';
 
-// ─── State ────────────────────────────────────────────────────────────
+// State
 const state = {
   rates: null,
   from: 'MMK',
@@ -24,7 +24,7 @@ const state = {
   ratesInterval: null,
 };
 
-// ─── DOM refs ─────────────────────────────────────────────────────────
+// DOM refs
 const $ = (id) => document.getElementById(id);
 
 const el = {
@@ -109,7 +109,7 @@ const el = {
   derivedRate:     $('derived-rate'),
 };
 
-// ─── Theme ────────────────────────────────────────────────────────────
+// Theme
 const MOON_SVG = `<path d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
 const SUN_SVG  = `<circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="2"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5.22 5.22l1.42 1.42M17.36 17.36l1.42 1.42M17.36 6.64l-1.42 1.42M6.64 17.36l-1.42 1.42" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>`;
 
@@ -131,7 +131,7 @@ function toggleTheme() {
   applyTheme(current === 'dark' ? 'light' : 'dark');
 }
 
-// ─── Bootstrap ────────────────────────────────────────────────────────
+// Bootstrap
 initTheme();
 if (el.githubLink)   el.githubLink.href   = GITHUB_URL;
 if (el.linkedinLink) el.linkedinLink.href = LINKEDIN_URL;
@@ -146,7 +146,7 @@ startClock();
 fetchRates();
 state.ratesInterval = setInterval(fetchRates, 60_000);
 
-// ─── Sparkline ────────────────────────────────────────────────────────
+// Sparkline
 function drawSparkline(svgEl, data, color, fill = true) {
   if (!svgEl || !data || data.length < 2) return;
   const w = svgEl.viewBox.baseVal.width;
@@ -186,7 +186,7 @@ function seedHistory(seed, len = 60, vol = 0.003) {
   return out;
 }
 
-// ─── Number format ────────────────────────────────────────────────────
+// Number format
 function fmtNum(n, dec = 2) {
   if (n === null || n === undefined || Number.isNaN(n)) return '—';
   return Number(n).toLocaleString('en-US', {
@@ -201,7 +201,7 @@ function fmtCompact(n) {
   return String(n);
 }
 
-// ─── Animated counter ─────────────────────────────────────────────────
+// Animated counter
 function animateValue(el, target, dec) {
   const prev = parseFloat(el.dataset.target) || target;
   el.dataset.target = target;
@@ -217,7 +217,7 @@ function animateValue(el, target, dec) {
   requestAnimationFrame(tick);
 }
 
-// ─── Clock ────────────────────────────────────────────────────────────
+// Clock
 function startClock() {
   const fmt = (tz) => new Date().toLocaleTimeString('en-GB', {
     hour: '2-digit', minute: '2-digit', second: '2-digit',
@@ -232,7 +232,7 @@ function startClock() {
   setInterval(tick, 1000);
 }
 
-// ─── Fetch rates from backend ─────────────────────────────────────────
+// Fetch rates from backend
 async function fetchRates() {
   el.loadingDot.classList.remove('is-hidden');
   try {
@@ -273,7 +273,7 @@ async function fetchRates() {
   }
 }
 
-// ─── Ticker rail update ───────────────────────────────────────────────
+// Ticker rail update
 function updateTicker() {
   const { usd_thb, usd_mmk, thb_mmk, usd_eur } = state.history;
   const rates = state.rates;
@@ -306,7 +306,7 @@ function updateTicker() {
   drawSparkline(el.sparkTickUsdEur, usd_eur, '#c084fc');
 }
 
-// ─── Reference rates update ───────────────────────────────────────────
+// Reference rates update
 function updateRefRates(data) {
   const { usd_thb, usd_mmk, thb_mmk, usd_eur } = state.history;
 
@@ -361,7 +361,7 @@ function showRatesError() {
   });
 }
 
-// ─── Status ───────────────────────────────────────────────────────────
+// Status
 function setBackendStatus(online) {
   state.backendOnline = online;
   const statusText = online ? t('statusLive') : t('statusOffline');
@@ -375,7 +375,7 @@ function setBackendStatus(online) {
   if (el.mobileLabel) el.mobileLabel.textContent = statusText;
 }
 
-// ─── Conversion (client-side) ─────────────────────────────────────────
+// Conversion (client-side)
 function getRateFromTo(fromCcy, toCcy, usdToThb, usdToEur, mmkPerThb) {
   if (fromCcy === toCcy) return 1;
   const eurToThb = usdToThb / usdToEur;
@@ -542,7 +542,7 @@ function updateHints() {
   el.cbmWarning.classList.toggle('is-hidden', !isOfficial);
 }
 
-// ─── Currency pickers ─────────────────────────────────────────────────
+// Currency pickers
 function setupPickerListeners() {
   el.fromPicker.querySelectorAll('[data-from]').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -598,7 +598,7 @@ function swapCurrencies() {
   calculate();
 }
 
-// ─── Quick amounts ────────────────────────────────────────────────────
+// Quick amounts
 function renderQuickAmounts() {
   const ccy = state.from;
   const amounts = ccy === 'MMK'
@@ -622,7 +622,7 @@ function renderQuickAmounts() {
   });
 }
 
-// ─── Copy quote ───────────────────────────────────────────────────────
+// Copy quote
 let copyTimer;
 function copyResult() {
   if (!state.lastResult || el.copyBtn.disabled) return;
@@ -649,7 +649,7 @@ function copyResult() {
     .catch(() => showToast(t('toastCopyFailed')));
 }
 
-// ─── Quote log ────────────────────────────────────────────────────────
+// Quote log
 function addQuoteLogEntry({ amount, from, to, result }) {
   const now = new Date();
   state.quoteLog.unshift({ amount, from, to, result, ts: now });
@@ -694,7 +694,7 @@ function relativeTime(date) {
   return `${Math.floor(diff / 3600)}h ago`;
 }
 
-// ─── Misc listeners ───────────────────────────────────────────────────
+// Misc listeners
 function setupListeners() {
   // amount input
   el.amount.addEventListener('input', () => {
@@ -751,7 +751,7 @@ function closeMobileMenu() {
   el.menuBtn.setAttribute('aria-expanded', 'false');
 }
 
-// ─── i18n ─────────────────────────────────────────────────────────────
+// i18n
 function t(key, vars = {}) {
   const dict = I18N[state.currentLang] || I18N.EN;
   const base = dict[key] || I18N.EN[key] || key;
@@ -783,7 +783,7 @@ function applyLanguage(code) {
   renderQuickAmounts();
 }
 
-// ─── Toast ────────────────────────────────────────────────────────────
+// Toast
 let toastTimer;
 function showToast(msg) {
   clearTimeout(toastTimer);
@@ -792,7 +792,7 @@ function showToast(msg) {
   toastTimer = setTimeout(() => el.toast.classList.add('is-hidden'), 2600);
 }
 
-// ─── Time helpers ─────────────────────────────────────────────────────
+// Time helpers
 function timeAgo(isoString) {
   if (!isoString) return '—';
   const diff = Math.floor((Date.now() - new Date(isoString).getTime()) / 1000);

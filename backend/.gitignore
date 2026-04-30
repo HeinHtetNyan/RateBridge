@@ -1,34 +1,34 @@
-# ── Python bytecode ──────────────────────────────────────────────────────
+#Python bytecode
 __pycache__/
 *.py[cod]
 *$py.class
 
-# ── Distribution / packaging ─────────────────────────────────────────────
+#Distribution / packaging
 *.egg-info/
 *.egg
 dist/
 build/
 
-# ── Virtual environments ──────────────────────────────────────────────────
+#Virtual environments
 venv/
 env/
 .venv/
 .env/
 
-# ── Environment — NEVER commit secrets ───────────────────────────────────
+#Environment — NEVER commit secrets
 .env
 .env.local
 
-# ── Testing & coverage ───────────────────────────────────────────────────
+#Testing & coverage
 .pytest_cache/
 .coverage
 htmlcov/
 *.log
 
-# ── IDE ──────────────────────────────────────────────────────────────────
+#IDE
 .vscode/
 .idea/
 
-# ── OS ───────────────────────────────────────────────────────────────────
+#OS 
 .DS_Store
 Thumbs.db

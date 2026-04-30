@@ -31,12 +31,13 @@ A real-time currency exchange desk for **MMK · THB · USD · EUR**, built for t
 
 | Layer | Technology |
 |---|---|
-| Frontend | Vanilla JS (ES modules), Vite 6 |
+| Frontend | Vanilla JS (ES modules), Vite 6, Nginx (Docker ready) |
 | Backend | Python 3.11, FastAPI, Uvicorn |
+| Connectivity | Cloudflare Tunnel (optional) |
 | HTTP client | httpx (async) |
 | Validation | Pydantic v2 |
 | Rate sources | Frankfurter API, Binance P2P, CBM API |
-| Deployment | Vercel (frontend), Docker on VPS (backend) |
+| Deployment | Vercel (frontend), Docker (backend/fullstack) |
 
 ---
 
@@ -52,9 +53,12 @@ Currency_Exchange/
 │   │   └── styles/
 │   │       ├── tokens.css      # Design tokens (dark + light theme)
 │   │       └── app.css         # Component styles
+│   ├── public/                 # Static assets (logo, etc.)
 │   ├── index.html
 │   ├── vite.config.js
 │   ├── vercel.json
+│   ├── Dockerfile              # Multi-stage Nginx build
+│   ├── nginx.conf              # SPA-optimized Nginx config
 │   ├── .env                    # Local env (git-ignored)
 │   └── .env.example            # Template — commit this
 │
@@ -79,7 +83,7 @@ Currency_Exchange/
 │   ├── .env                    # Local env (git-ignored)
 │   └── .env.example            # Template — commit this
 │
-├── docker-compose.yml          # Root compose — runs backend
+├── docker-compose.yml          # Root compose — runs backend + cloudflared
 └── README.md
 ```
 
@@ -106,7 +110,7 @@ Currency_Exchange/
 
 - Node.js 18+
 - Python 3.11+
-- Docker (optional, for backend)
+- Docker & Docker Compose (recommended)
 
 ### 1. Clone the repository
 
@@ -115,8 +119,9 @@ git clone https://github.com/HeinHtetNyan/ratebridge.git
 cd ratebridge
 ```
 
-### 2. Backend setup
+### 2. Manual Setup (Development)
 
+#### Backend
 ```bash
 cd backend
 cp .env.example .env          # fill in your values
@@ -126,19 +131,20 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
-API will be available at `http://localhost:8000`.  
-Interactive docs: `http://localhost:8000/docs`
-
-### 3. Frontend setup
-
+#### Frontend
 ```bash
 cd frontend
-cp .env.example .env          # set VITE_API_BASE_URL etc.
+cp .env.example .env          # set VITE_API_BASE_URL=http://localhost:8000
 npm install
 npm run dev
 ```
 
-App will be available at `http://localhost:3000`.
+### 3. Docker Setup (Recommended)
+
+To run the backend and Cloudflare Tunnel:
+```bash
+docker compose up -d --build
+```
 
 ---
 
@@ -149,8 +155,8 @@ App will be available at `http://localhost:3000`.
 | Variable | Description | Example |
 |---|---|---|
 | `VITE_API_BASE_URL` | Backend API base URL | `http://localhost:8000` |
-| `VITE_GITHUB_URL` | GitHub profile/repo link for footer icon | `https://github.com/yourname` |
-| `VITE_LINKEDIN_URL` | LinkedIn profile link for footer icon | `https://linkedin.com/in/yourname` |
+| `VITE_GITHUB_URL` | GitHub profile/repo link | `https://github.com/yourname` |
+| `VITE_LINKEDIN_URL` | LinkedIn profile link | `https://linkedin.com/in/yourname` |
 
 ### Backend (`backend/.env`)
 
@@ -159,148 +165,36 @@ App will be available at `http://localhost:3000`.
 | `APP_NAME` | API title shown in docs | `Currency Exchange API` |
 | `DEBUG` | Enable FastAPI debug mode | `False` |
 | `API_PREFIX` | Route prefix | `/api` |
-| `EXCHANGE_API_URL` | Frankfurter API endpoint | `https://api.frankfurter.dev/v1/latest` |
-| `BINANCE_P2P_URL` | Binance P2P search endpoint | *(see .env.example)* |
-| `CBM_API_URL` | Central Bank of Myanmar API | `https://forex.cbm.gov.mm/api/latest` |
-| `CACHE_TTL` | Rate cache lifetime in seconds | `60` |
-| `HTTP_TIMEOUT` | Outbound HTTP timeout in seconds | `10.0` |
-| `BINANCE_ROWS` | Number of P2P listings to sample | `10` |
-| `ALLOWED_ORIGINS` | Comma-separated CORS origins | `https://your-app.vercel.app` |
+| `CACHE_TTL` | Rate cache lifetime (seconds) | `60` |
+| `ALLOWED_ORIGINS` | Comma-separated CORS origins | `http://localhost:3000` |
+| `CLOUDFLARE_TUNNEL_TOKEN` | Token for Cloudflare Tunnel | `your-token-here` |
 
 ---
 
 ## API Reference
 
 ### `GET /api/rates`
-
 Returns current reference exchange rates.
 
-**Response**
-```json
-{
-  "usd_to_thb": 32.54,
-  "usd_to_eur": 0.8545,
-  "usd_to_mmk": 2100.0,
-  "thb_to_mmk": 64.5,
-  "eur_to_mmk": 2457.43,
-  "updated_at": "2026-05-01T10:00:00Z",
-  "mmk_source": "binance_p2p"
-}
-```
-
-`mmk_source` is either `"binance_p2p"` or `"cbm_official"`.
-
----
-
 ### `POST /api/convert`
-
 Convert an amount between MMK, THB, USD, and EUR.
-
-**Request body**
-```json
-{
-  "amount": 100000,
-  "from_currency": "MMK",
-  "to_currency": "THB",
-  "user_rate": 750,
-  "use_official": false
-}
-```
-
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `amount` | `float > 0` | ✅ | Amount to convert |
-| `from_currency` | `MMK \| THB \| USD \| EUR` | ✅ | Source currency |
-| `to_currency` | `MMK \| THB \| USD \| EUR` | ✅ | Target currency (must differ from `from_currency`) |
-| `user_rate` | `float > 0` | Required when MMK involved and `use_official=false` | THB per **100,000 MMK** |
-| `use_official` | `bool` | ❌ | `true` = use CBM official rates; default `false` |
-
-**Response**
-```json
-{
-  "amount": 100000,
-  "from_currency": "MMK",
-  "to_currency": "THB",
-  "converted_amount": 133.33,
-  "rate_used": 750.0
-}
-```
-
----
-
-### `GET /health`
-
-Health check endpoint.
-
-```json
-{ "status": "ok" }
-```
 
 ---
 
 ## Deployment
 
 ### Frontend → Vercel
+Set **Root Directory** to `frontend`. Vercel will handle the build automatically.
 
-1. Push the `frontend/` folder (or the whole repo) to GitHub.
-2. Import the project in [Vercel](https://vercel.com).
-3. Set **Root Directory** to `frontend`.
-4. Add all `VITE_*` environment variables in the Vercel project settings.
-5. Deploy — Vercel runs `npm run build` automatically.
+### Backend → VPS (Docker)
+Ensure your `ALLOWED_ORIGINS` includes your Vercel domain.
 
-### Backend → VPS with Docker
-
-```bash
-# On your VPS
-git clone https://github.com/HeinHtetNyan/ratebridge.git
-cd ratebridge
-cp backend/.env.example backend/.env   # fill in production values
-docker compose up -d --build
-```
-
-The backend will be available on port `8000`. Put it behind nginx or Caddy for HTTPS, then update `ALLOWED_ORIGINS` in `backend/.env` with your Vercel domain.
-
-**To rebuild after code changes:**
-```bash
-docker compose build --no-cache && docker compose up -d
-```
-
----
-
-## How the Rate Calculation Works
-
-All conversions use a unified `mmkPerThb` derived from whichever rate source is active:
-
-```
-User enters:   750  (THB per 100,000 MMK)   ← thb_per_100k mode
-Derived:       mmkPerThb = 100,000 / 750 ≈ 133.33  MMK per THB
-
-  — or —
-
-User enters:   133.33  (MMK per 1 THB)       ← mmk_per_thb mode
-Derived:       mmkPerThb = 133.33  (used directly)
-```
-
-The toggle button in the "Your Rate" section switches between these two input modes and converts the displayed value automatically.
-
-**Conversion formulas:**
-
-```
-THB  → MMK:   amount × mmkPerThb
-MMK  → THB:   amount / mmkPerThb
-USD  → THB:   amount × usdToThb
-THB  → USD:   amount / usdToThb
-USD  → MMK:   amount × usdToThb × mmkPerThb
-MMK  → USD:   amount / mmkPerThb / usdToThb
-EUR  → THB:   amount × (usdToThb / usdToEur)
-THB  → EUR:   amount / (usdToThb / usdToEur)
-EUR  → USD:   amount / usdToEur
-USD  → EUR:   amount × usdToEur
-EUR  → MMK:   amount × (usdToThb / usdToEur) × mmkPerThb
-MMK  → EUR:   amount / ((usdToThb / usdToEur) × mmkPerThb)
-```
-
-When **CBM Official** mode is on, `mmkPerThb` is sourced from the backend's `thb_to_mmk` field instead of the user input.
+### Connectivity → Cloudflare Tunnel
+The included `docker-compose.yml` supports Cloudflare Tunneling. 
+1. Create a tunnel in the Cloudflare Dashboard.
+2. Get the tunnel token.
+3. Set `CLOUDFLARE_TUNNEL_TOKEN` in your environment.
+4. Run `docker compose up -d`.
 
 ---
 
