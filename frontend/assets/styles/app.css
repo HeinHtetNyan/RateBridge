@@ -112,7 +112,7 @@ input  { font-family: inherit; border: none; outline: none; background: none; co
 
 /* ── Ticker rail ─────────────────────────────────────────────────────── */
 .ticker-rail {
-  display: grid; grid-template-columns: repeat(3, 1fr);
+  display: grid; grid-template-columns: repeat(4, 1fr);
   border-bottom: 1px solid var(--border);
 }
 .ticker-item {
@@ -503,6 +503,7 @@ html[data-theme="light"] .p2p-hint { background: rgba(8,116,164,0.06); border-co
   .step-item + .step-item { border-left: none; border-top: 1px solid var(--border); }
   .step-item:nth-child(odd) { border-right: none; }
   .ticker-item   { min-width: 100px; padding: 10px 12px; }
+  .ccy-btn       { padding: 9px 6px; font-size: 12px; }
 }
 
 /* ── Show/hide mobile elements ───────────────────────────────────────── */
