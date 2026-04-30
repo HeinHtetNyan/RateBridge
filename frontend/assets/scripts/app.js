@@ -4,8 +4,9 @@ import { I18N } from './i18n.js';
 const API_BASE = import.meta.env.DEV
   ? ''
   : (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
-const GITHUB_URL    = import.meta.env.VITE_GITHUB_URL   || '#';
-const LINKEDIN_URL  = import.meta.env.VITE_LINKEDIN_URL || '#';
+const ensureHttps = (url) => url && !url.startsWith('http') ? 'https://' + url : url;
+const GITHUB_URL    = ensureHttps(import.meta.env.VITE_GITHUB_URL)   || '#';
+const LINKEDIN_URL  = ensureHttps(import.meta.env.VITE_LINKEDIN_URL) || '#';
 
 // State
 const state = {
