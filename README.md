@@ -1,6 +1,6 @@
 # RateBridge — Currency Exchange Desk
 
-A real-time currency exchange desk for **MMK · THB · USD**, built for traders who need accurate P2P market rates alongside official CBM figures.
+A real-time currency exchange desk for **MMK · THB · USD · EUR**, built for traders who need accurate P2P market rates alongside official CBM figures.
 
 [![Frontend — Vercel](https://img.shields.io/badge/Frontend-Vercel-black?logo=vercel)](https://vercel.com)
 [![Backend — Docker](https://img.shields.io/badge/Backend-Docker-2496ED?logo=docker&logoColor=white)](https://docker.com)
@@ -11,13 +11,17 @@ A real-time currency exchange desk for **MMK · THB · USD**, built for traders 
 ## Features
 
 - **Live rates** — auto-refreshes every 60 seconds
-- **User rate input** — enter your own THB / 100k MMK P2P rate; all conversions use it
+- **4 currencies** — MMK, THB, USD, EUR with all pair combinations supported
+- **User rate input** — enter your own P2P rate in either format:
+  - THB per 100,000 MMK (e.g. `750`)
+  - MMK per 1 THB (e.g. `133.33`)
+  - Toggle between formats with the swap button; value converts automatically
 - **CBM official mode** — toggle to switch to Central Bank of Myanmar official rates
-- **Multi-currency result** — primary conversion + third-currency equivalent shown simultaneously
-- **Sparkline charts** — mini price history for USD/THB, USD/MMK, THB/MMK
+- **Multi-currency result** — primary conversion + all other currency equivalents shown simultaneously
+- **Sparkline charts** — mini price history for USD/THB, USD/MMK, THB/MMK, USD/EUR
 - **Quote log** — session history of copied quotes
 - **Bilingual** — English and Myanmar (မြန်မာဘာသာ)
-- **Dark / Light theme** — persisted in `localStorage`
+- **Dark / Light theme** — light by default, persisted in `localStorage`
 - **Responsive** — desktop two-column layout and mobile single-column view
 - **Live clocks** — Yangon, Bangkok, UTC
 
@@ -86,8 +90,11 @@ Currency_Exchange/
 | Pair | Primary | Fallback |
 |---|---|---|
 | USD / THB | [Frankfurter API](https://frankfurter.dev) | — |
+| USD / EUR | [Frankfurter API](https://frankfurter.dev) (same call) | — |
 | USD / MMK | Binance P2P (median of top 10 USDT/MMK listings) | CBM official |
-| THB / MMK | Derived from USD/THB × USD/MMK | CBM derived |
+| THB / MMK | Derived: USD/THB × USD/MMK | CBM derived |
+| EUR / THB | Derived: USD/THB ÷ USD/EUR | — |
+| EUR / MMK | Derived: EUR/THB × THB/MMK | — |
 
 > **Note:** Binance P2P requires the server to be located inside Myanmar to receive listings. If the server is hosted outside Myanmar (e.g. a VPS in Singapore), the backend automatically falls back to CBM official rates.
 
@@ -171,10 +178,12 @@ Returns current reference exchange rates.
 **Response**
 ```json
 {
-  "usd_to_thb": 33.42,
-  "usd_to_mmk": 3350.0,
-  "thb_to_mmk": 100.24,
-  "updated_at": "2026-04-29T10:00:00Z",
+  "usd_to_thb": 32.54,
+  "usd_to_eur": 0.8545,
+  "usd_to_mmk": 2100.0,
+  "thb_to_mmk": 64.5,
+  "eur_to_mmk": 2457.43,
+  "updated_at": "2026-05-01T10:00:00Z",
   "mmk_source": "binance_p2p"
 }
 ```
@@ -185,7 +194,7 @@ Returns current reference exchange rates.
 
 ### `POST /api/convert`
 
-Convert an amount between MMK, THB, and USD.
+Convert an amount between MMK, THB, USD, and EUR.
 
 **Request body**
 ```json
@@ -193,7 +202,7 @@ Convert an amount between MMK, THB, and USD.
   "amount": 100000,
   "from_currency": "MMK",
   "to_currency": "THB",
-  "user_rate": 780,
+  "user_rate": 750,
   "use_official": false
 }
 ```
@@ -201,8 +210,8 @@ Convert an amount between MMK, THB, and USD.
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `amount` | `float > 0` | ✅ | Amount to convert |
-| `from_currency` | `MMK \| THB \| USD` | ✅ | Source currency |
-| `to_currency` | `MMK \| THB \| USD` | ✅ | Target currency (must differ from `from_currency`) |
+| `from_currency` | `MMK \| THB \| USD \| EUR` | ✅ | Source currency |
+| `to_currency` | `MMK \| THB \| USD \| EUR` | ✅ | Target currency (must differ from `from_currency`) |
 | `user_rate` | `float > 0` | Required when MMK involved and `use_official=false` | THB per **100,000 MMK** |
 | `use_official` | `bool` | ❌ | `true` = use CBM official rates; default `false` |
 
@@ -212,8 +221,8 @@ Convert an amount between MMK, THB, and USD.
   "amount": 100000,
   "from_currency": "MMK",
   "to_currency": "THB",
-  "converted_amount": 128.21,
-  "rate_used": 780.0
+  "converted_amount": 133.33,
+  "rate_used": 750.0
 }
 ```
 
@@ -251,20 +260,44 @@ docker compose up -d --build
 
 The backend will be available on port `8000`. Put it behind nginx or Caddy for HTTPS, then update `ALLOWED_ORIGINS` in `backend/.env` with your Vercel domain.
 
+**To rebuild after code changes:**
+```bash
+docker compose build --no-cache && docker compose up -d
+```
+
 ---
 
 ## How the Rate Calculation Works
 
-The frontend performs all conversions **client-side** using the user's rate input:
+All conversions use a unified `mmkPerThb` derived from whichever rate source is active:
 
 ```
-user enters:  780  (THB per 100,000 MMK)
-derived:      mmkPerThb = 100,000 / 780 ≈ 128.21  MMK per THB
+User enters:   750  (THB per 100,000 MMK)   ← thb_per_100k mode
+Derived:       mmkPerThb = 100,000 / 750 ≈ 133.33  MMK per THB
 
-THB → MMK:    amount × mmkPerThb
-MMK → THB:    amount / mmkPerThb
-USD → MMK:    amount × usdToThb × mmkPerThb
-MMK → USD:    amount / mmkPerThb / usdToThb
+  — or —
+
+User enters:   133.33  (MMK per 1 THB)       ← mmk_per_thb mode
+Derived:       mmkPerThb = 133.33  (used directly)
+```
+
+The toggle button in the "Your Rate" section switches between these two input modes and converts the displayed value automatically.
+
+**Conversion formulas:**
+
+```
+THB  → MMK:   amount × mmkPerThb
+MMK  → THB:   amount / mmkPerThb
+USD  → THB:   amount × usdToThb
+THB  → USD:   amount / usdToThb
+USD  → MMK:   amount × usdToThb × mmkPerThb
+MMK  → USD:   amount / mmkPerThb / usdToThb
+EUR  → THB:   amount × (usdToThb / usdToEur)
+THB  → EUR:   amount / (usdToThb / usdToEur)
+EUR  → USD:   amount / usdToEur
+USD  → EUR:   amount × usdToEur
+EUR  → MMK:   amount × (usdToThb / usdToEur) × mmkPerThb
+MMK  → EUR:   amount / ((usdToThb / usdToEur) × mmkPerThb)
 ```
 
 When **CBM Official** mode is on, `mmkPerThb` is sourced from the backend's `thb_to_mmk` field instead of the user input.
