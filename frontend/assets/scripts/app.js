@@ -14,9 +14,10 @@ const state = {
   to: 'THB',
   amount: '',
   userRate: '',
+  rateMode: 'thb_per_100k', // 'thb_per_100k' | 'mmk_per_thb'
   backendOnline: false,
   currentLang: localStorage.getItem('ratebridge-lang') || 'EN',
-  history: { usd_thb: [], usd_mmk: [], thb_mmk: [] },
+  history: { usd_thb: [], usd_mmk: [], thb_mmk: [], usd_eur: [] },
   lastResult: null,
   quoteLog: [],
   debounceTimer: null,
@@ -45,8 +46,6 @@ const el = {
   resultMain:      $('result-main'),
   resultCcy:       $('result-ccy'),
   resultSecondary: $('result-secondary'),
-  resultSecValue:  $('result-sec-value'),
-  resultSecCcy:    $('result-sec-ccy'),
   resultError:     $('result-error'),
   rateApplied:  $('rate-applied-text'),
   copyBtn:      $('secure-btn'),
@@ -69,33 +68,44 @@ const el = {
   tickValUsdThb: $('tick-val-usd-thb'),
   tickValUsdMmk: $('tick-val-usd-mmk'),
   tickValThbMmk: $('tick-val-thb-mmk'),
+  tickValUsdEur: $('tick-val-usd-eur'),
   tickChgUsdThb: $('tick-chg-usd-thb'),
   tickChgUsdMmk: $('tick-chg-usd-mmk'),
   tickChgThbMmk: $('tick-chg-thb-mmk'),
+  tickChgUsdEur: $('tick-chg-usd-eur'),
   sparkTickUsdThb: $('spark-tick-usd-thb'),
   sparkTickUsdMmk: $('spark-tick-usd-mmk'),
   sparkTickThbMmk: $('spark-tick-thb-mmk'),
+  sparkTickUsdEur: $('spark-tick-usd-eur'),
   // ref rates
   refValUsdThb: $('ref-val-usd-thb'),
   refValUsdMmk: $('ref-val-usd-mmk'),
   refValThbMmk: $('ref-val-thb-mmk'),
+  refValUsdEur: $('ref-val-usd-eur'),
   refChgUsdThb: $('ref-chg-usd-thb'),
   refChgUsdMmk: $('ref-chg-usd-mmk'),
   refChgThbMmk: $('ref-chg-thb-mmk'),
+  refChgUsdEur: $('ref-chg-usd-eur'),
   refBadgeUsdThb: $('ref-badge-usd-thb'),
   refBadgeUsdMmk: $('ref-badge-usd-mmk'),
   refBadgeThbMmk: $('ref-badge-thb-mmk'),
+  refBadgeUsdEur: $('ref-badge-usd-eur'),
   refSrcUsdMmk: $('ref-src-usd-mmk'),
   refSrcThbMmk: $('ref-src-thb-mmk'),
   sparkRefUsdThb: $('spark-ref-usd-thb'),
   sparkRefUsdMmk: $('spark-ref-usd-mmk'),
   sparkRefThbMmk: $('spark-ref-thb-mmk'),
+  sparkRefUsdEur: $('spark-ref-usd-eur'),
   themeToggle:  $('theme-toggle'),
   themeIcon:    $('theme-icon'),
   githubLink:   $('github-link'),
   linkedinLink: $('linkedin-link'),
   userRateSection: $('user-rate-section'),
   userRateInput:   $('user-rate'),
+  userRateUnit:    $('user-rate-unit'),
+  userRateSuffix:  $('user-rate-suffix'),
+  rateModeBtn:     $('rate-mode-btn'),
+  rateModeLabel:   $('rate-mode-label'),
   derivedRate:     $('derived-rate'),
 };
 
@@ -104,7 +114,7 @@ const MOON_SVG = `<path d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z" stroke=
 const SUN_SVG  = `<circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="2"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5.22 5.22l1.42 1.42M17.36 17.36l1.42 1.42M17.36 6.64l-1.42 1.42M6.64 17.36l-1.42 1.42" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>`;
 
 function initTheme() {
-  const saved = localStorage.getItem('rb-theme') || 'dark';
+  const saved = localStorage.getItem('rb-theme') || 'light';
   applyTheme(saved, false);
 }
 
@@ -125,6 +135,9 @@ function toggleTheme() {
 initTheme();
 if (el.githubLink)   el.githubLink.href   = GITHUB_URL;
 if (el.linkedinLink) el.linkedinLink.href = LINKEDIN_URL;
+// Clear inputs on every load — browsers restore form values on refresh
+el.amount.value = '';
+if (el.userRateInput) el.userRateInput.value = '';
 applyLanguage(state.currentLang);
 setupPickerListeners();
 setupListeners();
@@ -232,10 +245,18 @@ async function fetchRates() {
       state.history.usd_thb = seedHistory(data.usd_to_thb, 56, 0.003);
       state.history.usd_mmk = seedHistory(data.usd_to_mmk, 56, 0.006);
       state.history.thb_mmk = seedHistory(data.thb_to_mmk, 56, 0.005);
+      if (data.usd_to_eur) state.history.usd_eur = seedHistory(data.usd_to_eur, 56, 0.003);
     } else {
       state.history.usd_thb = [...state.history.usd_thb.slice(1), data.usd_to_thb];
       state.history.usd_mmk = [...state.history.usd_mmk.slice(1), data.usd_to_mmk];
       state.history.thb_mmk = [...state.history.thb_mmk.slice(1), data.thb_to_mmk];
+      if (data.usd_to_eur) {
+        if (state.history.usd_eur.length === 0) {
+          state.history.usd_eur = seedHistory(data.usd_to_eur, 56, 0.003);
+        } else {
+          state.history.usd_eur = [...state.history.usd_eur.slice(1), data.usd_to_eur];
+        }
+      }
     }
 
     setBackendStatus(true);
@@ -254,7 +275,7 @@ async function fetchRates() {
 
 // ─── Ticker rail update ───────────────────────────────────────────────
 function updateTicker() {
-  const { usd_thb, usd_mmk, thb_mmk } = state.history;
+  const { usd_thb, usd_mmk, thb_mmk, usd_eur } = state.history;
   const rates = state.rates;
 
   const chgPct = (series) => {
@@ -271,20 +292,23 @@ function updateTicker() {
   animateValue(el.tickValUsdThb, rates.usd_to_thb, 4);
   animateValue(el.tickValUsdMmk, rates.usd_to_mmk, 0);
   animateValue(el.tickValThbMmk, rates.thb_to_mmk, 3);
+  if (rates.usd_to_eur) animateValue(el.tickValUsdEur, rates.usd_to_eur, 4);
 
   setCellChange(el.tickChgUsdThb, chgPct(usd_thb));
   setCellChange(el.tickChgUsdMmk, chgPct(usd_mmk));
   setCellChange(el.tickChgThbMmk, chgPct(thb_mmk));
+  if (usd_eur.length > 1) setCellChange(el.tickChgUsdEur, chgPct(usd_eur));
 
   const accent = '#5ce1a8';
   drawSparkline(el.sparkTickUsdThb, usd_thb, accent);
   drawSparkline(el.sparkTickUsdMmk, usd_mmk, '#ffb86b');
   drawSparkline(el.sparkTickThbMmk, thb_mmk, '#7ad7ff');
+  drawSparkline(el.sparkTickUsdEur, usd_eur, '#c084fc');
 }
 
 // ─── Reference rates update ───────────────────────────────────────────
 function updateRefRates(data) {
-  const { usd_thb, usd_mmk, thb_mmk } = state.history;
+  const { usd_thb, usd_mmk, thb_mmk, usd_eur } = state.history;
 
   const chgPct = (series) => {
     if (series.length < 2) return 0;
@@ -311,6 +335,11 @@ function updateRefRates(data) {
   setRow(el.refValThbMmk, el.refChgThbMmk, el.refBadgeThbMmk, el.sparkRefThbMmk,
     data.thb_to_mmk, 3, thb_mmk, '#7ad7ff');
 
+  if (data.usd_to_eur && usd_eur.length > 1) {
+    setRow(el.refValUsdEur, el.refChgUsdEur, el.refBadgeUsdEur, el.sparkRefUsdEur,
+      data.usd_to_eur, 4, usd_eur, '#c084fc');
+  }
+
   // source labels
   const isOfficial = data.mmk_source === 'cbm_official';
   el.refSrcUsdMmk.textContent = isOfficial ? 'CBM Official' : 'Binance P2P';
@@ -326,9 +355,9 @@ function updateLastSync(isoString) {
 }
 
 function showRatesError() {
-  [el.refValUsdThb, el.refValUsdMmk, el.refValThbMmk,
-   el.tickValUsdThb, el.tickValUsdMmk, el.tickValThbMmk].forEach((n) => {
-    n.textContent = '—';
+  [el.refValUsdThb, el.refValUsdMmk, el.refValThbMmk, el.refValUsdEur,
+   el.tickValUsdThb, el.tickValUsdMmk, el.tickValThbMmk, el.tickValUsdEur].forEach((n) => {
+    if (n) n.textContent = '—';
   });
 }
 
@@ -347,19 +376,28 @@ function setBackendStatus(online) {
 }
 
 // ─── Conversion (client-side) ─────────────────────────────────────────
-function getRateFromTo(fromCcy, toCcy, usdToThb, mmkPerThb) {
+function getRateFromTo(fromCcy, toCcy, usdToThb, usdToEur, mmkPerThb) {
   if (fromCcy === toCcy) return 1;
+  const eurToThb = usdToThb / usdToEur;
   if (toCcy === 'USD') {
     if (fromCcy === 'THB') return 1 / usdToThb;
     if (fromCcy === 'MMK') return 1 / (usdToThb * mmkPerThb);
+    if (fromCcy === 'EUR') return 1 / usdToEur;
   }
   if (toCcy === 'THB') {
     if (fromCcy === 'USD') return usdToThb;
     if (fromCcy === 'MMK') return 1 / mmkPerThb;
+    if (fromCcy === 'EUR') return eurToThb;
+  }
+  if (toCcy === 'EUR') {
+    if (fromCcy === 'USD') return usdToEur;
+    if (fromCcy === 'THB') return 1 / eurToThb;
+    if (fromCcy === 'MMK') return 1 / (eurToThb * mmkPerThb);
   }
   if (toCcy === 'MMK') {
     if (fromCcy === 'USD') return usdToThb * mmkPerThb;
     if (fromCcy === 'THB') return mmkPerThb;
+    if (fromCcy === 'EUR') return eurToThb * mmkPerThb;
   }
   return null;
 }
@@ -390,6 +428,7 @@ function calculate() {
 
   const rates = state.rates;
   const usdToThb = rates.usd_to_thb;
+  const usdToEur = rates.usd_to_eur;
 
   // Resolve MMK per THB from user's input rate
   let mmkPerThb;
@@ -402,10 +441,10 @@ function calculate() {
       updateHints();
       return;
     }
-    mmkPerThb = 100000 / ur;
+    mmkPerThb = state.rateMode === 'thb_per_100k' ? 100000 / ur : ur;
   }
 
-  const rate   = getRateFromTo(from, to, usdToThb, mmkPerThb);
+  const rate   = getRateFromTo(from, to, usdToThb, usdToEur, mmkPerThb);
   const result = amount * rate;
   const inv    = 1 / rate;
 
@@ -413,17 +452,20 @@ function calculate() {
   animateValue(el.resultMain, result, toDecimals);
   el.resultCcy.textContent = to;
 
-  // Secondary: third currency (only when MMK involved)
-  const thirdCcy = ['MMK', 'THB', 'USD'].find(c => c !== from && c !== to);
-  if (involvesMMK && thirdCcy) {
-    const thirdRate = getRateFromTo(from, thirdCcy, usdToThb, mmkPerThb);
-    if (thirdRate) {
-      const thirdAmount = amount * thirdRate;
-      const thirdDec = thirdCcy === 'MMK' ? 0 : (thirdCcy === 'USD' ? 4 : 2);
-      el.resultSecValue.textContent = fmtNum(thirdAmount, thirdDec);
-      el.resultSecCcy.textContent = thirdCcy;
-      el.resultSecondary.classList.remove('is-hidden');
-    }
+  // Secondary: all remaining currencies; skip MMK unless we already have mmkPerThb
+  const secondaryCcys = ['THB', 'USD', 'EUR', 'MMK']
+    .filter(c => c !== from && c !== to)
+    .filter(c => c !== 'MMK' || involvesMMK);
+  const parts = secondaryCcys.map((ccy) => {
+    const r = getRateFromTo(from, ccy, usdToThb, usdToEur, mmkPerThb);
+    if (!r) return '';
+    const val = amount * r;
+    const dec = ccy === 'MMK' ? 0 : ccy === 'USD' ? 4 : 2;
+    return `<span class="result-sec-prefix">≈</span><span class="result-sec-value"> ${fmtNum(val, dec)}</span> <span class="result-sec-ccy">${ccy}</span>`;
+  }).filter(Boolean);
+  if (parts.length > 0) {
+    el.resultSecondary.innerHTML = parts.join('<span class="result-sec-sep"> · </span>');
+    el.resultSecondary.classList.remove('is-hidden');
   } else {
     el.resultSecondary.classList.add('is-hidden');
   }
@@ -453,9 +495,36 @@ function updateUserRateVisibility() {
 function updateDerivedRate() {
   if (!el.derivedRate) return;
   const ur = parseFloat(state.userRate);
-  el.derivedRate.textContent = ur > 0
-    ? `1 THB ≈ ${fmtNum(100000 / ur, 2)} MMK`
-    : '1 THB ≈ — MMK';
+  if (!(ur > 0)) {
+    el.derivedRate.textContent = state.rateMode === 'thb_per_100k' ? '1 THB ≈ — MMK' : '100k MMK ≈ — THB';
+    return;
+  }
+  if (state.rateMode === 'thb_per_100k') {
+    el.derivedRate.textContent = `1 THB ≈ ${fmtNum(100000 / ur, 2)} MMK`;
+  } else {
+    el.derivedRate.textContent = `100k MMK ≈ ${fmtNum(100000 / ur, 2)} THB`;
+  }
+}
+
+function toggleRateMode() {
+  const ur = parseFloat(state.userRate);
+  state.rateMode = state.rateMode === 'thb_per_100k' ? 'mmk_per_thb' : 'thb_per_100k';
+  const isThbMode = state.rateMode === 'thb_per_100k';
+
+  if (ur > 0) {
+    const converted = parseFloat((100000 / ur).toFixed(2));
+    state.userRate = String(converted);
+    el.userRateInput.value = state.userRate;
+  }
+
+  if (el.userRateUnit)   el.userRateUnit.textContent   = isThbMode ? 'THB / 100k MMK' : 'MMK / 1 THB';
+  if (el.userRateSuffix) el.userRateSuffix.textContent = isThbMode ? 'THB / 100k' : 'MMK / THB';
+  if (el.rateModeLabel)  el.rateModeLabel.textContent  = isThbMode ? 'THB/100k' : 'MMK/THB';
+  el.userRateInput.placeholder = isThbMode ? 'e.g. 780' : 'e.g. 133';
+  el.userRateInput.setAttribute('aria-label', isThbMode ? 'Rate in THB per 100,000 MMK' : 'Rate in MMK per 1 THB');
+
+  updateDerivedRate();
+  calculate();
 }
 
 function updateHints() {
@@ -536,6 +605,8 @@ function renderQuickAmounts() {
     ? [50000, 100000, 500000, 1_000_000]
     : ccy === 'THB'
     ? [100, 500, 1000, 5000]
+    : ccy === 'EUR'
+    ? [50, 100, 500, 1000]
     : [10, 50, 100, 500];
 
   el.quickAmounts.innerHTML = amounts.map((a) =>
@@ -650,6 +721,7 @@ function setupListeners() {
 
   // copy
   el.copyBtn.addEventListener('click', copyResult);
+  el.rateModeBtn?.addEventListener('click', toggleRateMode);
 
   // lang buttons
   document.querySelectorAll('[data-lang]').forEach((btn) => {

@@ -5,8 +5,8 @@ from pydantic import BaseModel, Field, model_validator
 
 class ConvertRequest(BaseModel):
     amount: float = Field(gt=0)
-    from_currency: Literal["MMK", "THB", "USD"]
-    to_currency: Literal["MMK", "THB", "USD"]
+    from_currency: Literal["MMK", "THB", "USD", "EUR"]
+    to_currency: Literal["MMK", "THB", "USD", "EUR"]
     user_rate: Optional[float] = Field(None, gt=0)
     use_official: bool = False
 

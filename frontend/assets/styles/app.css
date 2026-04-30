@@ -278,9 +278,23 @@ html[data-theme="light"] .p2p-hint { background: rgba(8,116,164,0.06); border-co
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 10px;
 }
+.user-rate-label-row { display: flex; align-items: center; gap: 6px; }
 .user-rate-unit {
   font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em;
-  color: var(--text-dim); text-transform: uppercase; margin-left: 7px;
+  color: var(--text-dim); text-transform: uppercase;
+}
+.rate-mode-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 0 10px; height: 30px; border-radius: 6px;
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.04em; color: var(--text-dim);
+  border: 1px solid var(--border); background: var(--surface);
+  transition: color 160ms, border-color 160ms, background 160ms; cursor: pointer;
+  white-space: nowrap;
+}
+.rate-mode-btn:hover {
+  color: var(--accent); border-color: var(--accent);
+  background: var(--accent-line);
 }
 .derived-rate {
   font-family: var(--mono); font-size: 13px; font-weight: 500; color: var(--accent);

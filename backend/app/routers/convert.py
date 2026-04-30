@@ -22,6 +22,8 @@ async def convert(request: ConvertRequest):
         raise HTTPException(status_code=502, detail=f"Failed to fetch rates: {exc}")
 
     usd_to_thb = rates.usd_to_thb
+    usd_to_eur = rates.usd_to_eur
+    eur_to_thb = usd_to_thb / usd_to_eur
 
     if request.use_official:
         mmk_per_thb = rates.thb_to_mmk
@@ -29,6 +31,8 @@ async def convert(request: ConvertRequest):
         mmk_per_thb = 100_000 / request.user_rate
     else:
         mmk_per_thb = rates.thb_to_mmk
+
+    eur_to_mmk = eur_to_thb * mmk_per_thb
 
     fc = request.from_currency
     tc = request.to_currency
@@ -59,6 +63,30 @@ async def convert(request: ConvertRequest):
     elif fc == "USD" and tc == "THB":
         converted = amount * usd_to_thb
         rate_used = usd_to_thb
+
+    elif fc == "EUR" and tc == "USD":
+        converted = amount / usd_to_eur
+        rate_used = usd_to_eur
+
+    elif fc == "USD" and tc == "EUR":
+        converted = amount * usd_to_eur
+        rate_used = usd_to_eur
+
+    elif fc == "EUR" and tc == "THB":
+        converted = amount * eur_to_thb
+        rate_used = eur_to_thb
+
+    elif fc == "THB" and tc == "EUR":
+        converted = amount / eur_to_thb
+        rate_used = eur_to_thb
+
+    elif fc == "EUR" and tc == "MMK":
+        converted = amount * eur_to_mmk
+        rate_used = eur_to_mmk
+
+    elif fc == "MMK" and tc == "EUR":
+        converted = amount / eur_to_mmk
+        rate_used = eur_to_mmk
 
     else:
         raise HTTPException(status_code=400, detail="Unsupported currency pair.")

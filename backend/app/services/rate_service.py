@@ -17,15 +17,19 @@ async def get_rates() -> RateResponse:
     if cached is not None:
         return cached
 
-    usd_to_thb, (usd_to_mmk, thb_to_mmk, mmk_source) = await asyncio.gather(
-        _fetch_usd_to_thb(),
+    (usd_to_thb, usd_to_eur), (usd_to_mmk, thb_to_mmk, mmk_source) = await asyncio.gather(
+        _fetch_frankfurter_rates(),
         _fetch_mmk_rates(),
     )
 
+    eur_to_mmk = usd_to_mmk / usd_to_eur
+
     rates = RateResponse(
         usd_to_thb=usd_to_thb,
+        usd_to_eur=usd_to_eur,
         usd_to_mmk=usd_to_mmk,
         thb_to_mmk=thb_to_mmk,
+        eur_to_mmk=eur_to_mmk,
         updated_at=datetime.now(timezone.utc),
         mmk_source=mmk_source,
     )
@@ -37,7 +41,7 @@ async def _fetch_mmk_rates() -> tuple[float, float, str]:
     """Returns (usd_to_mmk, thb_to_mmk, source). Tries Binance P2P first, falls back to CBM."""
     try:
         usd_to_mmk = await fetch_usdt_mmk_rate()
-        usd_to_thb = await _fetch_usd_to_thb()
+        usd_to_thb, _ = await _fetch_frankfurter_rates()
         thb_to_mmk = usd_to_mmk / usd_to_thb
         return usd_to_mmk, thb_to_mmk, "binance_p2p"
     except GeoBlockedError:
@@ -45,13 +49,18 @@ async def _fetch_mmk_rates() -> tuple[float, float, str]:
         return usd_to_mmk, thb_to_mmk, "cbm_official"
 
 
-async def _fetch_usd_to_thb() -> float:
+async def _fetch_frankfurter_rates() -> tuple[float, float]:
+    """Returns (usd_to_thb, usd_to_eur) from Frankfurter."""
     async with httpx.AsyncClient(timeout=settings.HTTP_TIMEOUT) as client:
         response = await client.get(f"{settings.EXCHANGE_API_URL}?from=USD")
         response.raise_for_status()
         data = response.json()
 
-    thb = data.get("rates", {}).get("THB")
+    rates = data.get("rates", {})
+    thb = rates.get("THB")
+    eur = rates.get("EUR")
     if thb is None:
         raise ValueError("Frankfurter API did not return a THB rate")
-    return float(thb)
+    if eur is None:
+        raise ValueError("Frankfurter API did not return a EUR rate")
+    return float(thb), float(eur)

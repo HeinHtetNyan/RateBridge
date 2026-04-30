@@ -97,6 +97,14 @@
         </div>
         <svg id="spark-tick-thb-mmk" class="sparkline" width="130" height="40" viewBox="0 0 130 40" aria-hidden="true"></svg>
       </div>
+      <div class="ticker-item">
+        <div>
+          <div class="ticker-pair">USD/EUR</div>
+          <div id="tick-val-usd-eur" class="ticker-value">—</div>
+          <div id="tick-chg-usd-eur" class="ticker-change">—</div>
+        </div>
+        <svg id="spark-tick-usd-eur" class="sparkline" width="130" height="40" viewBox="0 0 130 40" aria-hidden="true"></svg>
+      </div>
     </div>
 
     <!-- ── Main grid ─────────────────────────────────────────────────── -->
@@ -126,6 +134,7 @@
               <button type="button" class="ccy-btn is-active" data-from="MMK">MMK</button>
               <button type="button" class="ccy-btn" data-from="THB">THB</button>
               <button type="button" class="ccy-btn" data-from="USD">USD</button>
+              <button type="button" class="ccy-btn" data-from="EUR">EUR</button>
             </div>
           </div>
 
@@ -136,7 +145,7 @@
               class="amount-input"
               type="text"
               inputmode="decimal"
-              value=""
+              autocomplete="off"
               placeholder="0"
               aria-label="Amount"
             >
@@ -167,15 +176,22 @@
               <button type="button" class="ccy-btn" data-to="MMK">MMK</button>
               <button type="button" class="ccy-btn is-active" data-to="THB">THB</button>
               <button type="button" class="ccy-btn" data-to="USD">USD</button>
+              <button type="button" class="ccy-btn" data-to="EUR">EUR</button>
             </div>
           </div>
 
           <!-- User rate input (visible when MMK involved & market mode) -->
           <div id="user-rate-section" class="user-rate-section is-hidden">
             <div class="user-rate-header">
-              <div>
+              <div class="user-rate-label-row">
                 <span class="field-label" data-i18n="yourRateLabel">Your Rate</span>
-                <span class="user-rate-unit">THB / 100k MMK</span>
+                <span id="user-rate-unit" class="user-rate-unit">THB / 100k MMK</span>
+                <button id="rate-mode-btn" class="rate-mode-btn" type="button" title="Switch rate format" aria-label="Switch rate format">
+                  <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <path d="M3 5h10M11 3l2 2-2 2M13 11H3M5 9l-2 2 2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <span id="rate-mode-label">THB/100k</span>
+                </button>
               </div>
               <span id="derived-rate" class="derived-rate">1 THB ≈ — MMK</span>
             </div>
@@ -185,10 +201,11 @@
                 class="user-rate-input"
                 type="text"
                 inputmode="decimal"
+                autocomplete="off"
                 placeholder="e.g. 780"
                 aria-label="Rate in THB per 100,000 MMK"
               >
-              <span class="user-rate-suffix">THB / 100k</span>
+              <span id="user-rate-suffix" class="user-rate-suffix">THB / 100k</span>
             </div>
           </div>
 
@@ -198,11 +215,7 @@
               <span id="result-main" class="result-number">—</span>
               <span id="result-ccy" class="result-ccy">THB</span>
             </div>
-            <div id="result-secondary" class="result-secondary is-hidden">
-              <span class="result-sec-prefix">≈</span>
-              <span id="result-sec-value" class="result-sec-value">—</span>
-              <span id="result-sec-ccy" class="result-sec-ccy">USD</span>
-            </div>
+            <div id="result-secondary" class="result-secondary is-hidden"></div>
             <p id="result-error" class="result-error-msg is-hidden"></p>
           </div>
 
@@ -317,6 +330,20 @@
             <svg id="spark-ref-thb-mmk" class="sparkline-sm" width="90" height="30" viewBox="0 0 90 30" aria-hidden="true"></svg>
             <span id="ref-badge-thb-mmk" class="ref-badge">—</span>
           </div>
+
+          <div class="ref-rate-row">
+            <div class="ref-rate-info">
+              <span class="ref-rate-pair">USD / EUR</span>
+              <span class="ref-rate-source">Frankfurter</span>
+            </div>
+            <div class="ref-rate-value-col">
+              <span id="ref-val-usd-eur" class="ref-rate-value">—</span>
+              <span id="ref-chg-usd-eur" class="ref-rate-chg">—</span>
+            </div>
+            <svg id="spark-ref-usd-eur" class="sparkline-sm" width="90" height="30" viewBox="0 0 90 30" aria-hidden="true"></svg>
+            <span id="ref-badge-usd-eur" class="ref-badge">—</span>
+          </div>
+
         </section>
 
         <!-- Quote log -->
