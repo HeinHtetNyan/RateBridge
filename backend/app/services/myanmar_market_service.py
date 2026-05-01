@@ -8,7 +8,7 @@ class MyanmarMarketError(Exception):
 
 
 async def fetch_mmk_rates() -> tuple[float, float]:
-    """Returns (usd_to_mmk, thb_to_mmk) from Myanmar Market API using midpoint of buy/sell rates."""
+    """Returns (usd_to_mmk, thb_to_mmk) from Myanmar Market API using sell rates."""
     if not settings.MYANMAR_MARKET_API_KEY:
         raise MyanmarMarketError("MYANMAR_MARKET_API_KEY not configured")
 
@@ -31,7 +31,7 @@ async def fetch_mmk_rates() -> tuple[float, float]:
     if not thb:
         raise MyanmarMarketError("Myanmar Market API did not return a THB rate")
 
-    usd_to_mmk = (float(usd["buyRate"]) + float(usd["sellRate"])) / 2
-    thb_to_mmk = (float(thb["buyRate"]) + float(thb["sellRate"])) / 2
+    usd_to_mmk = float(usd["sellRate"])
+    thb_to_mmk = float(thb["sellRate"])
 
     return usd_to_mmk, thb_to_mmk
