@@ -295,7 +295,7 @@
           <div class="ref-rate-row">
             <div class="ref-rate-info">
               <span class="ref-rate-pair">USD / THB</span>
-              <span class="ref-rate-source">Frankfurter</span>
+              <span id="ref-src-usd-thb" class="ref-rate-source">Frankfurter</span>
             </div>
             <div class="ref-rate-value-col">
               <span id="ref-val-usd-thb" class="ref-rate-value">—</span>
@@ -334,7 +334,7 @@
           <div class="ref-rate-row">
             <div class="ref-rate-info">
               <span class="ref-rate-pair">USD / EUR</span>
-              <span class="ref-rate-source">Frankfurter</span>
+              <span id="ref-src-usd-eur" class="ref-rate-source">Frankfurter</span>
             </div>
             <div class="ref-rate-value-col">
               <span id="ref-val-usd-eur" class="ref-rate-value">—</span>
@@ -363,7 +363,7 @@
     <!-- Footer -->
     <footer class="footer-strip">
       <span class="footer-sync">Last sync: <span id="last-sync" class="last-sync">—</span></span>
-      <span class="footer-mid" data-i18n="footerSources">Refresh: 60s · Sources: Frankfurter, Binance P2P, CBM</span>
+      <span class="footer-mid"><span data-i18n="footerRefreshPrefix">Refresh: 60s · Sources: </span><span id="footer-sources">Frankfurter, Binance P2P, CBM</span></span>
       <span class="footer-brand">
         <a id="github-link" class="social-link" href="#" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">

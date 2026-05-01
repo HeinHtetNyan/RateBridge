@@ -11,3 +11,4 @@ class RateResponse(BaseModel):
     eur_to_mmk: float
     updated_at: datetime
     mmk_source: str  # "binance_p2p" | "cbm_official"
+    fiat_source: str  # "airwallex" | "frankfurter"

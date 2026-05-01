@@ -41,7 +41,7 @@ export const I18N = {
     step4Title: 'Copy quote',
     step4Body: 'Share-ready text with the exact rate applied.',
     // Footer
-    footerSources: 'Refresh: 60s · Sources: Frankfurter, Binance P2P, CBM',
+    footerRefreshPrefix: 'Refresh: 60s · Sources: ',
     // Mobile menu
     mobileMenuTitle: 'Menu',
     // User rate
@@ -95,7 +95,7 @@ export const I18N = {
     step4Title: 'ကူးပြီးမျှဝေပါ',
     step4Body: 'နှုန်းပါသော quote စာသား ကူးယူနိုင်သည်။',
     // Footer
-    footerSources: 'Refresh: 60s · ရင်းမြစ်: Frankfurter, Binance P2P, CBM',
+    footerRefreshPrefix: 'Refresh: 60s · ရင်းမြစ်: ',
     // Mobile menu
     mobileMenuTitle: 'မီနူး',
     // User rate

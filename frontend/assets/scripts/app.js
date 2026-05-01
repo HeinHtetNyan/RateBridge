@@ -91,8 +91,11 @@ const el = {
   refBadgeUsdMmk: $('ref-badge-usd-mmk'),
   refBadgeThbMmk: $('ref-badge-thb-mmk'),
   refBadgeUsdEur: $('ref-badge-usd-eur'),
+  refSrcUsdThb: $('ref-src-usd-thb'),
+  refSrcUsdEur: $('ref-src-usd-eur'),
   refSrcUsdMmk: $('ref-src-usd-mmk'),
   refSrcThbMmk: $('ref-src-thb-mmk'),
+  footerSources: $('footer-sources'),
   sparkRefUsdThb: $('spark-ref-usd-thb'),
   sparkRefUsdMmk: $('spark-ref-usd-mmk'),
   sparkRefThbMmk: $('spark-ref-thb-mmk'),
@@ -343,8 +346,15 @@ function updateRefRates(data) {
 
   // source labels
   const isOfficial = data.mmk_source === 'cbm_official';
+  const fiatLabel = data.fiat_source === 'airwallex' ? 'Airwallex' : 'Frankfurter';
+  el.refSrcUsdThb.textContent = fiatLabel;
+  el.refSrcUsdEur.textContent = fiatLabel;
   el.refSrcUsdMmk.textContent = isOfficial ? 'CBM Official' : 'Binance P2P';
   el.refSrcThbMmk.textContent = isOfficial ? 'CBM Derived'  : 'Derived';
+
+  // footer sources
+  const mmkLabel = isOfficial ? 'CBM' : 'Binance P2P';
+  if (el.footerSources) el.footerSources.textContent = `${fiatLabel}, ${mmkLabel}`;
 
   // rates updated timestamp
   el.ratesUpdated.textContent = timeAgo(data.updated_at);
