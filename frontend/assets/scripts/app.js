@@ -345,15 +345,23 @@ function updateRefRates(data) {
   }
 
   // source labels
-  const isOfficial = data.mmk_source === 'cbm_official';
+  const mmkSrc   = data.mmk_source;
   const fiatLabel = data.fiat_source === 'airwallex' ? 'Airwallex' : 'Frankfurter';
   el.refSrcUsdThb.textContent = fiatLabel;
   el.refSrcUsdEur.textContent = fiatLabel;
-  el.refSrcUsdMmk.textContent = isOfficial ? 'CBM Official' : 'Binance P2P';
-  el.refSrcThbMmk.textContent = isOfficial ? 'CBM Derived'  : 'Derived';
+  if (mmkSrc === 'myanmar_market') {
+    el.refSrcUsdMmk.textContent = 'Myanmar Market';
+    el.refSrcThbMmk.textContent = 'Myanmar Market';
+  } else if (mmkSrc === 'cbm_official') {
+    el.refSrcUsdMmk.textContent = 'CBM Official';
+    el.refSrcThbMmk.textContent = 'CBM Official';
+  } else {
+    el.refSrcUsdMmk.textContent = 'Binance P2P';
+    el.refSrcThbMmk.textContent = 'Derived';
+  }
 
   // footer sources
-  const mmkLabel = isOfficial ? 'CBM' : 'Binance P2P';
+  const mmkLabel = mmkSrc === 'myanmar_market' ? 'Myanmar Market' : mmkSrc === 'cbm_official' ? 'CBM' : 'Binance P2P';
   if (el.footerSources) el.footerSources.textContent = `${fiatLabel}, ${mmkLabel}`;
 
   // rates updated timestamp
@@ -540,9 +548,11 @@ function toggleRateMode() {
 
 function updateHints() {
   const involvesMMK = state.from === 'MMK' || state.to === 'MMK';
-  const isOfficial  = state.rates?.mmk_source === 'cbm_official';
+  const mmkSource   = state.rates?.mmk_source;
+  const isOfficial  = mmkSource === 'cbm_official';
+  const showP2pHint = involvesMMK && mmkSource === 'binance_p2p' && state.rates;
 
-  if (involvesMMK && !isOfficial && state.rates) {
+  if (showP2pHint) {
     const thb100k = fmtNum(100000 / state.rates.thb_to_mmk, 2);
     el.p2pText.textContent = `${t('p2pHint')} · 100k MMK ≈ ${thb100k} THB`;
     el.p2pHint.classList.remove('is-hidden');

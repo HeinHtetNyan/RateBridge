@@ -9,6 +9,7 @@ from app.services import cache_service
 from app.services.airwallex_service import AirwallexAuthError, AirwallexRateError, fetch_airwallex_rates
 from app.services.binance_service import GeoBlockedError, fetch_usdt_mmk_rate
 from app.services.cbm_service import fetch_cbm_mmk_rates
+from app.services.myanmar_market_service import MyanmarMarketError, fetch_mmk_rates as fetch_myanmar_market_mmk_rates
 
 _CACHE_KEY = "rates"
 
@@ -51,7 +52,16 @@ async def _fetch_fiat_rates() -> tuple[float, float, str]:
 
 
 async def _fetch_mmk_rates() -> tuple[float, float | None, str]:
-    """Returns (usd_to_mmk, thb_to_mmk, source). thb_to_mmk is None for Binance (derived in get_rates using fiat source rate)."""
+    """Returns (usd_to_mmk, thb_to_mmk, source).
+    Priority: Myanmar Market → Binance P2P → CBM.
+    thb_to_mmk is None for Binance (derived in get_rates using fiat source rate).
+    """
+    try:
+        usd_to_mmk, thb_to_mmk = await fetch_myanmar_market_mmk_rates()
+        return usd_to_mmk, thb_to_mmk, "myanmar_market"
+    except (MyanmarMarketError, Exception):
+        pass
+
     try:
         usd_to_mmk = await fetch_usdt_mmk_rate()
         return usd_to_mmk, None, "binance_p2p"

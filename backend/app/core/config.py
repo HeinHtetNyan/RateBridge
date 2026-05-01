@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     AIRWALLEX_AUTH_URL: str = "https://api.airwallex.com/api/v1/authentication/login"
     AIRWALLEX_QUOTE_URL: str = "https://api.airwallex.com/api/v1/marketfx/quote"
 
+    MYANMAR_MARKET_API_KEY: str = ""
+    MYANMAR_MARKET_BASE_URL: str = ""
+
     CACHE_TTL: int = 60
     HTTP_TIMEOUT: float = 10.0
     BINANCE_ROWS: int = 10
