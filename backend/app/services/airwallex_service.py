@@ -63,8 +63,8 @@ async def fetch_airwallex_rates() -> tuple[float, float]:
         thb_resp.raise_for_status()
         eur_resp.raise_for_status()
 
-    usd_to_thb = thb_resp.json().get("client_rate")
-    usd_to_eur = eur_resp.json().get("client_rate")
+    usd_to_thb = thb_resp.json().get("sell_amount")
+    usd_to_eur = eur_resp.json().get("sell_amount")
 
     if usd_to_thb is None:
         raise AirwallexRateError("Airwallex did not return a USD/THB rate")

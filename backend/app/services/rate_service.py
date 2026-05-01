@@ -18,11 +18,12 @@ async def get_rates() -> RateResponse:
     if cached is not None:
         return cached
 
-    (usd_to_thb, usd_to_eur, fiat_source), (usd_to_mmk, thb_to_mmk, mmk_source) = await asyncio.gather(
+    (usd_to_thb, usd_to_eur, fiat_source), (usd_to_mmk, thb_to_mmk_raw, mmk_source) = await asyncio.gather(
         _fetch_fiat_rates(),
         _fetch_mmk_rates(),
     )
 
+    thb_to_mmk = thb_to_mmk_raw if thb_to_mmk_raw is not None else usd_to_mmk / usd_to_thb
     eur_to_mmk = usd_to_mmk / usd_to_eur
 
     rates = RateResponse(
@@ -49,13 +50,11 @@ async def _fetch_fiat_rates() -> tuple[float, float, str]:
         return usd_to_thb, usd_to_eur, "frankfurter"
 
 
-async def _fetch_mmk_rates() -> tuple[float, float, str]:
-    """Returns (usd_to_mmk, thb_to_mmk, source). Tries Binance P2P first, falls back to CBM."""
+async def _fetch_mmk_rates() -> tuple[float, float | None, str]:
+    """Returns (usd_to_mmk, thb_to_mmk, source). thb_to_mmk is None for Binance (derived in get_rates using fiat source rate)."""
     try:
         usd_to_mmk = await fetch_usdt_mmk_rate()
-        usd_to_thb, _ = await _fetch_frankfurter_rates()
-        thb_to_mmk = usd_to_mmk / usd_to_thb
-        return usd_to_mmk, thb_to_mmk, "binance_p2p"
+        return usd_to_mmk, None, "binance_p2p"
     except GeoBlockedError:
         usd_to_mmk, thb_to_mmk = await fetch_cbm_mmk_rates()
         return usd_to_mmk, thb_to_mmk, "cbm_official"
