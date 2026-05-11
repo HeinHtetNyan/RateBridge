@@ -8,196 +8,147 @@ A real-time currency exchange desk for **MMK · THB · USD · EUR**, built for t
 
 ---
 
-## Features
+## 🚀 Features
 
-- **Live rates** — auto-refreshes every 60 seconds
-- **4 currencies** — MMK, THB, USD, EUR with all pair combinations supported
-- **User rate input** — enter your own P2P rate in either format:
+- **Live rates** — auto-refreshes every 60 seconds with source tracking.
+- **4 currencies** — MMK, THB, USD, EUR with all pair combinations supported.
+- **Dual rate input** — Enter your own P2P rate in either format:
   - THB per 100,000 MMK (e.g. `750`)
   - MMK per 1 THB (e.g. `133.33`)
-  - Toggle between formats with the swap button; value converts automatically
-- **CBM official mode** — toggle to switch to Central Bank of Myanmar official rates
-- **Multi-currency result** — primary conversion + all other currency equivalents shown simultaneously
-- **Sparkline charts** — mini price history for USD/THB, USD/MMK, THB/MMK, USD/EUR
-- **Quote log** — session history of copied quotes
-- **Bilingual** — English and Myanmar (မြန်မာဘာသာ)
-- **Dark / Light theme** — light by default, persisted in `localStorage`
-- **Responsive** — desktop two-column layout and mobile single-column view
-- **Live clocks** — Yangon, Bangkok, UTC
+  - Automatic conversion when toggling between formats.
+- **Dynamic Sources** — Uses high-precision institutional sources (Airwallex) and local market APIs.
+- **Multi-currency result** — Shows primary conversion + all other currency equivalents simultaneously.
+- **Sparkline charts** — Mini price history for USD/THB, USD/MMK, THB/MMK, and USD/EUR.
+- **Quote log** — Session history of copied quotes for easy reference.
+- **Bilingual UI** — English and Myanmar (မြန်မာဘာသာ) support.
+- **Theming** — Dark / Light theme support, persisted in `localStorage`.
+- **Responsive Design** — Desktop two-column layout and mobile-optimized views.
 
 ---
 
-## Tech Stack
+## 🛠️ Tech Stack
 
 | Layer | Technology |
 |---|---|
-| Frontend | Vanilla JS (ES modules), Vite 6, Nginx (Docker ready) |
-| Backend | Python 3.11, FastAPI, Uvicorn |
-| Connectivity | Cloudflare Tunnel (optional) |
-| HTTP client | httpx (async) |
-| Validation | Pydantic v2 |
-| Rate sources | Frankfurter API, Binance P2P, CBM API |
-| Deployment | Vercel (frontend), Docker (backend/fullstack) |
+| **Frontend** | Vanilla JS (ES modules), Vite 6, Tailwind-inspired CSS |
+| **Backend** | Python 3.11+, FastAPI, Uvicorn |
+| **HTTP Client** | httpx (async) |
+| **Validation** | Pydantic v2 |
+| **Deployment** | Vercel (Frontend), Docker (Backend) |
 
 ---
 
-## Project Structure
+## 🏗️ Project Structure
 
 ```
 Currency_Exchange/
 ├── frontend/
 │   ├── assets/
 │   │   ├── scripts/
-│   │   │   ├── app.js          # Main app logic
+│   │   │   ├── app.js          # Main app logic & state management
 │   │   │   └── i18n.js         # EN / MM translations
 │   │   └── styles/
-│   │       ├── tokens.css      # Design tokens (dark + light theme)
-│   │       └── app.css         # Component styles
-│   ├── public/                 # Static assets (logo, etc.)
+│   │       ├── tokens.css      # Design tokens (colors, spacing)
+│   │       └── app.css         # Component-specific styles
 │   ├── index.html
 │   ├── vite.config.js
 │   ├── vercel.json
 │   ├── Dockerfile              # Multi-stage Nginx build
-│   ├── nginx.conf              # SPA-optimized Nginx config
-│   ├── .env                    # Local env (git-ignored)
-│   └── .env.example            # Template — commit this
+│   └── .env.example            # Frontend environment template
 │
 ├── backend/
 │   ├── app/
-│   │   ├── core/
-│   │   │   └── config.py       # Settings via pydantic-settings
-│   │   ├── routers/
-│   │   │   ├── rates.py        # GET /api/rates
-│   │   │   └── convert.py      # POST /api/convert
-│   │   ├── schemas/
-│   │   │   ├── rate_schema.py
-│   │   │   └── convert_schema.py
-│   │   ├── services/
-│   │   │   ├── rate_service.py     # Orchestrates data sources + cache
-│   │   │   ├── binance_service.py  # Binance P2P median price
-│   │   │   ├── cbm_service.py      # CBM official rates (fallback)
-│   │   │   └── cache_service.py    # In-memory TTL cache
+│   │   ├── core/config.py      # Pydantic-settings configuration
+│   │   ├── routers/            # API endpoints (rates, convert)
+│   │   ├── schemas/            # Pydantic models
+│   │   ├── services/           # Business logic & external API integration
+│   │   │   ├── rate_service.py # Source orchestration & caching
+│   │   │   ├── airwallex_service.py # Institutional rates
+│   │   │   ├── binance_service.py   # P2P Market rates
+│   │   │   ├── myanmar_market_service.py # Local market API
+│   │   │   └── cbm_service.py       # Official CBM fallback
 │   │   └── main.py
 │   ├── Dockerfile
 │   ├── requirements.txt
-│   ├── .env                    # Local env (git-ignored)
-│   └── .env.example            # Template — commit this
+│   └── .env.example            # Backend environment template
 │
-├── docker-compose.yml          # Root compose — runs backend + cloudflared
+├── docker-compose.yml          # Production-ready compose for backend
 └── README.md
 ```
 
 ---
 
-## Rate Sources
+## 📊 Rate Sources & Priority
 
-| Pair | Primary | Fallback |
-|---|---|---|
-| USD / THB | [Frankfurter API](https://frankfurter.dev) | — |
-| USD / EUR | [Frankfurter API](https://frankfurter.dev) (same call) | — |
-| USD / MMK | Binance P2P (median of top 10 USDT/MMK listings) | CBM official |
-| THB / MMK | Derived: USD/THB × USD/MMK | CBM derived |
-| EUR / THB | Derived: USD/THB ÷ USD/EUR | — |
-| EUR / MMK | Derived: EUR/THB × THB/MMK | — |
+The backend uses a multi-tiered fallback system to ensure data availability:
 
-> **Note:** Binance P2P requires the server to be located inside Myanmar to receive listings. If the server is hosted outside Myanmar (e.g. a VPS in Singapore), the backend automatically falls back to CBM official rates.
+### Fiat Rates (USD/THB, USD/EUR)
+1. **Airwallex MarketFX** (Institutional Quality)
+2. **Frankfurter API** (Public Fallback)
+
+### MMK Rates (USD/MMK, THB/MMK)
+1. **Myanmar Market API** (Real-time local rates)
+2. **Binance P2P** (Median of top 10 USDT/MMK listings)
+3. **CBM Official** (Central Bank of Myanmar fallback)
+
+> **Note:** Some sources (like Binance) may be geoblocked depending on your server location. The system automatically detects failures and switches to the next available source.
 
 ---
 
-## Getting Started
+## 🚦 Getting Started
 
 ### Prerequisites
-
-- Node.js 18+
+- Node.js 20+
 - Python 3.11+
-- Docker & Docker Compose (recommended)
+- Docker (optional, for deployment)
 
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/HeinHtetNyan/ratebridge.git
-cd ratebridge
-```
-
-### 2. Manual Setup (Development)
-
-#### Backend
+### 1. Backend Setup
 ```bash
 cd backend
-cp .env.example .env          # fill in your values
+cp .env.example .env
+# Edit .env with your API keys (Airwallex, Myanmar Market, etc.)
 python -m venv venv
-source venv/bin/activate      # Windows: venv\Scripts\activate
+source venv/bin/activate
 pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload
 ```
 
-#### Frontend
+### 2. Frontend Setup
 ```bash
 cd frontend
-cp .env.example .env          # set VITE_API_BASE_URL=http://localhost:8000
+cp .env.example .env
+# Set VITE_API_BASE_URL to http://localhost:8000
 npm install
 npm run dev
 ```
 
-### 3. Docker Setup (Recommended)
+---
 
-To run the backend and Cloudflare Tunnel:
+## ⚙️ Environment Variables
+
+### Backend (`backend/.env`)
+| Variable | Description | Default |
+|---|---|---|
+| `AIRWALLEX_CLIENT_ID` | Airwallex API Client ID | `""` |
+| `AIRWALLEX_API_KEY` | Airwallex API Key | `""` |
+| `MYANMAR_MARKET_API_KEY`| Local Market API Key | `""` |
+| `CACHE_TTL` | Rate cache lifetime (seconds) | `60` |
+| `ALLOWED_ORIGINS` | CORS allowed origins | `http://localhost:3000` |
+
+---
+
+## 🚢 Deployment
+
+### Frontend (Vercel)
+Connect your repository to Vercel and set the **Root Directory** to `frontend`.
+
+### Backend (Docker)
+The root `docker-compose.yml` is configured for deployment behind a reverse proxy (e.g., Nginx Proxy Manager).
 ```bash
 docker compose up -d --build
 ```
 
 ---
 
-## Environment Variables
-
-### Frontend (`frontend/.env`)
-
-| Variable | Description | Example |
-|---|---|---|
-| `VITE_API_BASE_URL` | Backend API base URL | `http://localhost:8000` |
-| `VITE_GITHUB_URL` | GitHub profile/repo link | `https://github.com/yourname` |
-| `VITE_LINKEDIN_URL` | LinkedIn profile link | `https://linkedin.com/in/yourname` |
-
-### Backend (`backend/.env`)
-
-| Variable | Description | Default |
-|---|---|---|
-| `APP_NAME` | API title shown in docs | `Currency Exchange API` |
-| `DEBUG` | Enable FastAPI debug mode | `False` |
-| `API_PREFIX` | Route prefix | `/api` |
-| `CACHE_TTL` | Rate cache lifetime (seconds) | `60` |
-| `ALLOWED_ORIGINS` | Comma-separated CORS origins | `http://localhost:3000` |
-| `CLOUDFLARE_TUNNEL_TOKEN` | Token for Cloudflare Tunnel | `your-token-here` |
-
----
-
-## API Reference
-
-### `GET /api/rates`
-Returns current reference exchange rates.
-
-### `POST /api/convert`
-Convert an amount between MMK, THB, USD, and EUR.
-
----
-
-## Deployment
-
-### Frontend → Vercel
-Set **Root Directory** to `frontend`. Vercel will handle the build automatically.
-
-### Backend → VPS (Docker)
-Ensure your `ALLOWED_ORIGINS` includes your Vercel domain.
-
-### Connectivity → Cloudflare Tunnel
-The included `docker-compose.yml` supports Cloudflare Tunneling. 
-1. Create a tunnel in the Cloudflare Dashboard.
-2. Get the tunnel token.
-3. Set `CLOUDFLARE_TUNNEL_TOKEN` in your environment.
-4. Run `docker compose up -d`.
-
----
-
-## License
-
+## 📄 License
 MIT
